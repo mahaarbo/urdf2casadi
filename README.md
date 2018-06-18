@@ -2,6 +2,7 @@
 ## Installation
 1. [Get ROS](http://www.ros.org/install/) (actually anything that installs `urdfdom_py`/`urdf_parser_py` will do)
 2. [Get CasADi](https://github.com/casadi/casadi/wiki/InstallationInstructions) (e.g. `pip install casadi`)
+3. run `pip install --user .` in the folder
 
 ## Usage example
 ```python
@@ -16,6 +17,6 @@ print forward_kinematics([0.3, 0.3, 0.3, 0., 0.3, 0.7])
 
 ## Todo/Implementation status
 - [x] Forward kinematics with SE3 matrix
-- [ ] Forward kinematics of rotation with quaternion
+- [ ] Forward kinematics of rotation with quaternion (QUATERNIONS ARE NOT WORKING?)
 - [ ] Dynamics from links and their inertia tags
 - [ ] Denavit Hartenberg?

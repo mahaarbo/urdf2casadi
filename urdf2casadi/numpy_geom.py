@@ -43,7 +43,7 @@ def quaternion_rpy(roll, pitch, yaw):
     y = cr*sp*cy + sr*cp*sy
     z = cr*cp*sy - sr*sp*cy
     w = cr*cp*cy + sr*sp*sy
-    nq = np.sqrt(x*x + y*y + z*z + w*w) 
+    nq = np.sqrt(x*x + y*y + z*z + w*w)
     return np.array([x/nq,
                      y/nq,
                      z/nq,

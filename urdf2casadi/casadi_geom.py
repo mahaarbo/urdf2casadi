@@ -3,7 +3,7 @@ import casadi as cs
 
 
 def T_prismatic(xyz, rpy, axis, qi):
-    T = cs.MX.zeros(4, 4)
+    T = cs.SX.zeros(4, 4)
 
     # Origin rotation from RPY ZYX convention
     cr = cs.cos(rpy[0])
@@ -43,7 +43,7 @@ def T_prismatic(xyz, rpy, axis, qi):
 
 
 def T_revolute(xyz, rpy, axis, qi):
-    T = cs.MX.zeros(4, 4)
+    T = cs.SX.zeros(4, 4)
 
     # Origin rotation from RPY ZYX convention
     cr = cs.cos(rpy[0])
@@ -97,15 +97,15 @@ def T_revolute(xyz, rpy, axis, qi):
 
 def quaternion_revolute(xyz, rpy, axis, qi):
     """Gives a casadi function for the quaternion. [xyz, w] form."""
-    quat = cs.MX.zeros(4, 1)
-
+    #quat = cs.SX.zeros(4, 1)
+    roll, pitch, yaw = rpy
     # Origin rotation from RPY ZYX convention
-    cr = cs.cos(rpy[0]/2.0)
-    sr = cs.sin(rpy[0]/2.0)
-    cp = cs.cos(rpy[1]/2.0)
-    sp = cs.sin(rpy[1]/2.0)
-    cy = cs.cos(rpy[2]/2.0)
-    sy = cs.sin(rpy[2]/2.0)
+    cr = cs.cos(roll/2.0)
+    sr = cs.sin(roll/2.0)
+    cp = cs.cos(pitch/2.0)
+    sp = cs.sin(pitch/2.0)
+    cy = cs.cos(yaw/2.0)
+    sy = cs.sin(yaw/2.0)
 
     # The quaternion associated with the static joint frame rotation
     # Note: quat = [ xyz, w], where w is the scalar part
@@ -123,17 +123,12 @@ def quaternion_revolute(xyz, rpy, axis, qi):
     w1 = cqi
 
     # Resulting quaternion
-    quat[0, 0] = x1*w0 + y1*z0 - z1*y0 + w1*x0
-    quat[1, 0] = -x1*z0 + y1*w0 + z1*x0 + w1*y0
-    quat[2, 0] = x1*y0 - y1*x0 + z1*w0 + w1*z0
-    quat[3, 0] = -x1*x0 - y1*y0 - z1*z0 + w1*w0
-
-    return quat
+    return quaternion_product([x1, y1, z1, w1], [x0, y0, z0, w0])
 
 
 def T_full_symbolic(xyz, rpy):
     """Gives a symbolic transformation matrix."""
-    T = cs.MX.zeros(4, 4)
+    T = cs.SX.zeros(4, 4)
     cr = cs.cos(rpy[0])
     sr = cs.sin(rpy[0])
     cp = cs.cos(rpy[1])
@@ -158,11 +153,11 @@ def T_full_symbolic(xyz, rpy):
 
 def quaternion_product(quat0, quat1):
     """Returns the quaternion product of q0 and q1."""
-    quat = cs.MX.zeros(4, 1)
+    quat = cs.SX.zeros(4)
     x0, y0, z0, w0 = quat0[0], quat0[1], quat0[2], quat0[3]
     x1, y1, z1, w1 = quat1[0], quat1[1], quat1[2], quat1[3]
-    quat[0, 0] = x1*w0 + y1*z0 - z1*y0 + w1*x0
-    quat[1, 0] = -x1*z0 + y1*w0 + z1*x0 + w1*y0
-    quat[2, 0] = x1*y0 - y1*x0 + z1*w0 + w1*z0
-    quat[3, 0] = -x1*x0 - y1*y0 - z1*z0 + w1*w0
+    quat[0] = x1*w0 + y1*z0 - z1*y0 + w1*x0
+    quat[1] = -x1*z0 + y1*w0 + z1*x0 + w1*y0
+    quat[2] = x1*y0 - y1*x0 + z1*w0 + w1*z0
+    quat[3] = -x1*x0 - y1*y0 - z1*z0 + w1*w0
     return quat
