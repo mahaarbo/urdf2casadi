@@ -97,7 +97,6 @@ def T_revolute(xyz, rpy, axis, qi):
 
 def quaternion_revolute(xyz, rpy, axis, qi):
     """Gives a casadi function for the quaternion. [xyz, w] form."""
-    #quat = cs.SX.zeros(4, 1)
     roll, pitch, yaw = rpy
     # Origin rotation from RPY ZYX convention
     cr = cs.cos(roll/2.0)
@@ -107,23 +106,23 @@ def quaternion_revolute(xyz, rpy, axis, qi):
     cy = cs.cos(yaw/2.0)
     sy = cs.sin(yaw/2.0)
 
-    # The quaternion associated with the static joint frame rotation
+    # The quaternion associated with the origin rotation
     # Note: quat = [ xyz, w], where w is the scalar part
-    x0 = sr*cp*cy - cr*sp*sy
-    y0 = cr*sp*cy + sr*cp*sy
-    z0 = cr*cp*sy - sr*sp*cy
-    w0 = cr*cp*cy + sr*sp*sy
-
+    x_or = sr*cp*cy - cr*sp*sy
+    y_or = cr*sp*cy + sr*cp*sy
+    z_or = cr*cp*sy - sr*sp*cy
+    w_or = cr*cp*cy + sr*sp*sy
+    q_or = [x_or, y_or, z_or, w_or]
     # Joint rotation from axis angle
     cqi = cs.cos(qi/2.0)
     sqi = cs.sin(qi/2.0)
-    x1 = axis[0]*sqi
-    y1 = axis[1]*sqi
-    z1 = axis[2]*sqi
-    w1 = cqi
-
+    x_j = axis[0]*sqi
+    y_j = axis[1]*sqi
+    z_j = axis[2]*sqi
+    w_j = cqi
+    q_j = [x_j, y_j, z_j, w_j]
     # Resulting quaternion
-    return quaternion_product([x1, y1, z1, w1], [x0, y0, z0, w0])
+    return quaternion_product(q_j, q_or)
 
 
 def T_full_symbolic(xyz, rpy):

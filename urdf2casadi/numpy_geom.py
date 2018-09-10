@@ -39,10 +39,11 @@ def quaternion_rpy(roll, pitch, yaw):
     sp = np.sin(pitch/2.0)
     cy = np.cos(yaw/2.0)
     sy = np.sin(yaw/2.0)
-    x = sr*cp*cy - cr*sp*sy
-    y = cr*sp*cy + sr*cp*sy
-    z = cr*cp*sy - sr*sp*cy
-    w = cr*cp*cy + sr*sp*sy
+    x = sr * cp * cy - cr * sp * sy
+    y = cr * sp * cy + sr * cp * sy
+    z = cr * cp * sy - sr * sp * cy
+    w = cr * cp * cy + sr * sp * sy
+    # Remember to normalize:
     nq = np.sqrt(x*x + y*y + z*z + w*w)
     return np.array([x/nq,
                      y/nq,
@@ -57,3 +58,16 @@ def T_rpy(displacement, roll, pitch, yaw):
     T[:3, 3] = displacement
     T[3, 3] = 1.0
     return T
+
+
+def quaternion_ravani_roth_dist(q1, q2):
+    """Quaternion distance designed by ravani and roth.
+    See comparisons at: https://link.springer.com/content/pdf/10.1007%2Fs10851-009-0161-2.pdf"""
+    return min(np.linalg.norm(q1 - q2), np.linalg.norm(q1 + q2))
+
+
+def quaternion_inner_product_dist(q1, q2):
+    """Quaternion distance based on innerproduct and arccos.
+    See comparisons at: https://link.springer.com/content/pdf/10.1007%2Fs10851-009-0161-2.pdf"""
+    return 1.0 - abs(q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2] + q1[3]*q2[3])
+

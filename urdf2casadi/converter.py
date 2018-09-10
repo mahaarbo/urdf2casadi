@@ -69,8 +69,8 @@ def get_fk_dict(robot_desc, chain):
                                            *joint.origin.rpy)
             joint_quaternion = numpy_geom.quaternion_rpy(*joint.origin.rpy)
             T_fk = cs.mtimes(T_fk, joint_frame)
-            quaternion_fk = casadi_geom.quaternion_product(quaternion_fk,
-                                                           joint_quaternion)
+            quaternion_fk = casadi_geom.quaternion_product(joint_quaternion,
+                                                           quaternion_fk)
         elif joint.type == "prismatic":
             if joint.axis is None:
                 joint.axis = [1., 0., 0.]
@@ -79,8 +79,8 @@ def get_fk_dict(robot_desc, chain):
                                                   joint.axis, q[i])
             joint_quaternion = numpy_geom.quaternion_rpy(*joint.origin.rpy)
             T_fk = cs.mtimes(T_fk, joint_frame)
-            quaternion_fk = casadi_geom.quaternion_product(quaternion_fk,
-                                                           joint_quaternion)
+            quaternion_fk = casadi_geom.quaternion_product(joint_quaternion,
+                                                           quaternion_fk)
             i += 1
         elif joint.type in ["revolute", "continuous"]:
             if joint.axis is None:
@@ -92,8 +92,8 @@ def get_fk_dict(robot_desc, chain):
                                                                joint.origin.rpy,
                                                                joint.axis, q[i])
             T_fk = cs.mtimes(T_fk, joint_frame)
-            quaternion_fk = casadi_geom.quaternion_product(quaternion_fk,
-                                                           joint_quaternion)
+            quaternion_fk = casadi_geom.quaternion_product(joint_quaternion,
+                                                           quaternion_fk)
             i += 1
     # We want to give out functions, not just the pure symbols in this version
     # So we have to convert the T_fk and the quaternion_fk symbols into
