@@ -71,3 +71,6 @@ def quaternion_inner_product_dist(q1, q2):
     See comparisons at: https://link.springer.com/content/pdf/10.1007%2Fs10851-009-0161-2.pdf"""
     return 1.0 - abs(q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2] + q1[3]*q2[3])
 
+
+def rotation_distance_from_identity(R1, R2):
+    return np.linalg.norm(np.eye(1) - np.dot(R1, R2.T))
