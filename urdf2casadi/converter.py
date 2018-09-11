@@ -58,9 +58,9 @@ def get_fk_dict(robot_desc, chain):
                     joint.origin.rpy = [0., 0., 0.]
 
     # Then start on symbolics
-    q = cs.SX.sym("q", nvar)
-    T_fk = cs.SX.eye(4)
-    quaternion_fk = cs.SX.zeros(4)
+    q = cs.MX.sym("q", nvar)
+    T_fk = cs.MX.eye(4)
+    quaternion_fk = cs.MX.zeros(4)
     quaternion_fk[3] = 1.0
     i = 0
     for joint in joint_list:
@@ -95,13 +95,6 @@ def get_fk_dict(robot_desc, chain):
             quaternion_fk = casadi_geom.quaternion_product(joint_quaternion,
                                                            quaternion_fk)
             i += 1
-    # We want to give out functions, not just the pure symbols in this version
-    # So we have to convert the T_fk and the quaternion_fk symbols into
-    # CasADi Functions.
-    T_fk = cs.Function("T_fk", [q], [T_fk],
-                       ["joint_states"], ["transformation_matrix"])
-    quaternion_fk = cs.Function("quaternion_fk", [q], [quaternion_fk],
-                                ["joint_states"], ["quaternion"])
     return {
         "joint_names": actuated_names,
         "upper": upper,
