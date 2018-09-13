@@ -108,10 +108,10 @@ def quaternion_revolute(xyz, rpy, axis, qi):
 
     # The quaternion associated with the origin rotation
     # Note: quat = [ xyz, w], where w is the scalar part
-    x_or = sr*cp*cy - cr*sp*sy
-    y_or = cr*sp*cy + sr*cp*sy
-    z_or = cr*cp*sy - sr*sp*cy
-    w_or = cr*cp*cy + sr*sp*sy
+    x_or = cy*sr*cp - sy*cr*sp
+    y_or = cy*cr*sp + sy*sr*cp
+    z_or = sy*cr*cp - cy*sr*sp
+    w_or = cy*cr*cp + sy*sr*sp
     q_or = [x_or, y_or, z_or, w_or]
     # Joint rotation from axis angle
     cqi = cs.cos(qi/2.0)
@@ -122,7 +122,7 @@ def quaternion_revolute(xyz, rpy, axis, qi):
     w_j = cqi
     q_j = [x_j, y_j, z_j, w_j]
     # Resulting quaternion
-    return quaternion_product(q_j, q_or)
+    return quaternion_product(q_or, q_j)
 
 
 def T_full_symbolic(xyz, rpy):
@@ -155,8 +155,8 @@ def quaternion_product(quat0, quat1):
     quat = cs.MX.zeros(4)
     x0, y0, z0, w0 = quat0[0], quat0[1], quat0[2], quat0[3]
     x1, y1, z1, w1 = quat1[0], quat1[1], quat1[2], quat1[3]
-    quat[0] = x1*w0 + y1*z0 - z1*y0 + w1*x0
-    quat[1] = -x1*z0 + y1*w0 + z1*x0 + w1*y0
-    quat[2] = x1*y0 - y1*x0 + z1*w0 + w1*z0
-    quat[3] = -x1*x0 - y1*y0 - z1*z0 + w1*w0
+    quat[0] = w0*x1 + x0*w1 + y0*z1 - z0*y1
+    quat[1] = w0*y1 - x0*z1 + y0*w1 + z0*x1
+    quat[2] = w0*z1 + x0*y1 - y0*x1 + z0*w1
+    quat[3] = w0*w1 - x0*x1 - y0*y1 - z0*z1
     return quat
