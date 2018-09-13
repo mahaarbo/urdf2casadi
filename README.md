@@ -22,3 +22,4 @@ print forward_kinematics([0.3, 0.3, 0.3, 0., 0.3, 0.7])
 - [ ] Dynamics from links and their inertia tags
 - [ ] Denavit Hartenberg?
 - [ ] unit tests
+- [ ] Examples
