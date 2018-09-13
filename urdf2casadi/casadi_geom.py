@@ -3,7 +3,7 @@ import casadi as cs
 
 
 def T_prismatic(xyz, rpy, axis, qi):
-    T = cs.MX.zeros(4, 4)
+    T = cs.SX.zeros(4, 4)
 
     # Origin rotation from RPY ZYX convention
     cr = cs.cos(rpy[0])
@@ -43,7 +43,7 @@ def T_prismatic(xyz, rpy, axis, qi):
 
 
 def T_revolute(xyz, rpy, axis, qi):
-    T = cs.MX.zeros(4, 4)
+    T = cs.SX.zeros(4, 4)
 
     # Origin rotation from RPY ZYX convention
     cr = cs.cos(rpy[0])
@@ -127,7 +127,7 @@ def quaternion_revolute(xyz, rpy, axis, qi):
 
 def T_full_symbolic(xyz, rpy):
     """Gives a symbolic transformation matrix."""
-    T = cs.MX.zeros(4, 4)
+    T = cs.SX.zeros(4, 4)
     cr = cs.cos(rpy[0])
     sr = cs.sin(rpy[0])
     cp = cs.cos(rpy[1])
@@ -152,7 +152,7 @@ def T_full_symbolic(xyz, rpy):
 
 def quaternion_product(quat0, quat1):
     """Returns the quaternion product of q0 and q1."""
-    quat = cs.MX.zeros(4)
+    quat = cs.SX.zeros(4)
     x0, y0, z0, w0 = quat0[0], quat0[1], quat0[2], quat0[3]
     x1, y1, z1, w1 = quat1[0], quat1[1], quat1[2], quat1[3]
     quat[0] = w0*x1 + x0*w1 + y0*z1 - z0*y1
@@ -167,7 +167,7 @@ def dual_quaternion_product(Q, P):
     representing a dual quaternions. First four elements are the real
     part, last four elements are the dual part.
     """
-    res = cs.MX.zeros(8)
+    res = cs.SX.zeros(8)
     # Real and dual components
     xr0, yr0, zr0, wr0 = Q[0], Q[1], Q[2], Q[3]
     xd0, yd0, zd0, wd0 = Q[4], Q[5], Q[6], Q[7]
@@ -202,7 +202,7 @@ def dual_quaternion_product(Q, P):
 def dual_quaternion_conj(Q):
     """Returns the conjugate of a dual quaternion.
     """
-    res = cs.MX.zeros(8)
+    res = cs.SX.zeros(8)
     res[0] = -Q[0]
     res[1] = -Q[1]
     res[2] = -Q[2]
@@ -219,8 +219,8 @@ def dual_quaternion_norm2(Q):
     Based on:
     https://github.com/bobbens/libdq/blob/master/dq.c
     """
-    real = cs.MX.zeros(1)
-    dual = cs.MX.zeros(1)
+    real = cs.SX.zeros(1)
+    dual = cs.SX.zeros(1)
     real = Q[0]*Q[0] + Q[1]*Q[1] + Q[2]*Q[2] + Q[3]*Q[3]
     dual = 2.*(Q[3]*Q[7] + Q[0]*Q[4] + Q[1]*Q[5] + Q[2]*Q[6])
     return real, dual
@@ -231,7 +231,7 @@ def dual_quaternion_inv(Q):
     Based on:
     https://github.com/bobbens/libdq/blob/master/dq.c
     """
-    res = cs.MX.zeros(8)
+    res = cs.SX.zeros(8)
     real, dual = dual_quaternion_norm2(Q)
     res[0] = -Q[0] * real
     res[1] = -Q[1] * real
@@ -247,7 +247,7 @@ def dual_quaternion_inv(Q):
 def dual_quaternion_to_transformation_matrix(Q):
     """Transforms a dual quaternion to a 4x4 transformation matrix.
     """
-    res = cs.MX.zeros(4, 4)
+    res = cs.SX.zeros(4, 4)
     # Rotation part:
     xr, yr, zr, wr = Q[0], Q[1], Q[2], Q[3]
     xd, yd, zd, wd = Q[4], Q[5], Q[6], Q[7]
@@ -287,7 +287,7 @@ def dual_quaternion_rpy(rpy):
     y_or = cy*cr*sp + sy*sr*cp
     z_or = sy*cr*cp - cy*sr*sp
     w_or = cy*cr*cp + sy*sr*sp
-    res = cs.MX.zeros(8)
+    res = cs.SX.zeros(8)
     # Note, our dual quaternions use a different representation
     # dual_quat = [xyz, w, xyz', w']
     # where w + xyz represents the "real" quaternion
@@ -302,7 +302,7 @@ def dual_quaternion_rpy(rpy):
 def dual_quaternion_translation(xyz):
     """Returns the dual quaternion for a pure translation.
     """
-    res = cs.MX.zeros(8)
+    res = cs.SX.zeros(8)
     res[3] = 1.0
     res[4] = xyz[0]/2.0
     res[5] = xyz[1]/2.0
@@ -313,7 +313,7 @@ def dual_quaternion_translation(xyz):
 def dual_quaternion_axis_translation(axis, qi):
     """Returns the dual quaternion for a translation along an axis.
     """
-    res = cs.MX.zeros(8)
+    res = cs.SX.zeros(8)
     res[3] = 1.0
     res[4] = qi*axis[0]/2.0
     res[5] = qi*axis[1]/2.0
@@ -325,7 +325,7 @@ def dual_quaternion_axis_rotation(axis, qi):
     """Returns the dual quaternion for a rotation along an axis.
     AXIS MUST BE NORMALIZED!
     """
-    res = cs.MX.zeros(8)
+    res = cs.SX.zeros(8)
     cqi = cs.cos(qi/2.0)
     sqi = cs.sin(qi/2.0)
     res[0] = axis[0]*sqi
