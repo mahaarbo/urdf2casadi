@@ -16,8 +16,9 @@ print forward_kinematics([0.3, 0.3, 0.3, 0., 0.3, 0.7])
 ```
 
 ## Todo/Implementation status
-- [x] Forward kinematics with SE3 matrix
-- [x] Forward kinematics of rotation with quaternion (There may be an offset issue here. Testing required)
+- [x] Forward kinematics with SE(3) matrix
+- [x] Forward kinematics of rotation with quaternion
+- [x] Dual Quaternions as alternative to SE(3) matrices
 - [ ] Dynamics from links and their inertia tags
 - [ ] Denavit Hartenberg?
 - [ ] unit tests
