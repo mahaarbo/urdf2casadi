@@ -56,52 +56,76 @@ def get_fk_dict(robot_desc, chain):
                     joint.origin.xyz = [0., 0., 0.]
                 elif joint.origin.rpy is None:
                     joint.origin.rpy = [0., 0., 0.]
-
     # Then start on symbolics
-    q = cs.SX.sym("q", nvar)
-    T_fk = cs.SX.eye(4)
-    quaternion_fk = cs.SX.zeros(4)
+    q = cs.MX.sym("q", nvar)
+    T_fk = cs.MX.eye(4)
+    quaternion_fk = cs.MX.zeros(4)
     quaternion_fk[3] = 1.0
+    dual_quaternion_fk = cs.MX.zeros(8)
+    dual_quaternion_fk[3] = 1.0
     i = 0
     for joint in joint_list:
         if joint.type == "fixed":
-            joint_frame = numpy_geom.T_rpy(joint.origin.xyz,
-                                           *joint.origin.rpy)
-            joint_quaternion = numpy_geom.quaternion_rpy(*joint.origin.rpy)
+            xyz = joint.origin.xyz
+            rpy = joint.origin.rpy
+            joint_frame = numpy_geom.T_rpy(xyz,
+                                           *rpy)
+            joint_quaternion = numpy_geom.quaternion_rpy(*rpy)
+            joint_dual_quat = numpy_geom.dual_quaternion_prismatic(xyz,
+                                                                   rpy,
+                                                                   [1., 0., 0.],
+                                                                   0.)
             T_fk = cs.mtimes(T_fk, joint_frame)
-            quaternion_fk = casadi_geom.quaternion_product(joint_quaternion,
-                                                           quaternion_fk)
+            quaternion_fk = casadi_geom.quaternion_product(quaternion_fk,
+                                                           joint_quaternion)
+            dual_quaternion_fk = casadi_geom.dual_quaternion_product(
+                dual_quaternion_fk,
+                joint_dual_quat)
         elif joint.type == "prismatic":
             if joint.axis is None:
-                joint.axis = [1., 0., 0.]
+                axis = cs.np.array([1., 0., 0.])
+            axis = cs.np.array(joint.axis)
+            #axis = (1./cs.np.linalg.norm(axis))*axis
             joint_frame = casadi_geom.T_prismatic(joint.origin.xyz,
                                                   joint.origin.rpy,
                                                   joint.axis, q[i])
             joint_quaternion = numpy_geom.quaternion_rpy(*joint.origin.rpy)
+            joint_dual_quat = casadi_geom.dual_quaternion_prismatic(
+                joint.origin.xyz,
+                joint.origin.rpy,
+                axis, q[i])
             T_fk = cs.mtimes(T_fk, joint_frame)
-            quaternion_fk = casadi_geom.quaternion_product(joint_quaternion,
-                                                           quaternion_fk)
+            quaternion_fk = casadi_geom.quaternion_product(quaternion_fk,
+                                                           joint_quaternion)
+            dual_quaternion_fk = casadi_geom.dual_quaternion_product(
+                dual_quaternion_fk,
+                joint_dual_quat)
             i += 1
         elif joint.type in ["revolute", "continuous"]:
             if joint.axis is None:
-                joint.axis = [1., 0., 0.]
+                axis = cs.np.array([1., 0., 0.])
+            axis = cs.np.array(joint.axis)
+            axis = (1./cs.np.linalg.norm(axis))*axis
             joint_frame = casadi_geom.T_revolute(joint.origin.xyz,
                                                  joint.origin.rpy,
                                                  joint.axis, q[i])
             joint_quaternion = casadi_geom.quaternion_revolute(joint.origin.xyz,
                                                                joint.origin.rpy,
-                                                               joint.axis, q[i])
+                                                               axis, q[i])
+            joint_dual_quat = casadi_geom.dual_quaternion_revolute(
+                joint.origin.xyz,
+                joint.origin.rpy,
+                axis, q[i])
             T_fk = cs.mtimes(T_fk, joint_frame)
-            quaternion_fk = casadi_geom.quaternion_product(joint_quaternion,
-                                                           quaternion_fk)
+            quaternion_fk = casadi_geom.quaternion_product(quaternion_fk,
+                                                           joint_quaternion)
+            dual_quaternion_fk = casadi_geom.dual_quaternion_product(
+                dual_quaternion_fk,
+                joint_dual_quat)
             i += 1
-    # We want to give out functions, not just the pure symbols in this version
-    # So we have to convert the T_fk and the quaternion_fk symbols into
-    # CasADi Functions.
-    T_fk = cs.Function("T_fk", [q], [T_fk],
-                       ["joint_states"], ["transformation_matrix"])
-    quaternion_fk = cs.Function("quaternion_fk", [q], [quaternion_fk],
-                                ["joint_states"], ["quaternion"])
+    #quaternion_fk = cs.Function("quaternion_fk", [q], [quaternion_fk])
+    #dual_quaternion_fk = cs.Function("dual_quaternion_fk", [q], [dual_quaternion_fk])
+    #T_fk = cs.Function("T_fk", [q], [T_fk])
     return {
         "joint_names": actuated_names,
         "upper": upper,
@@ -109,5 +133,6 @@ def get_fk_dict(robot_desc, chain):
         "joint_list": joint_list,
         "q": q,
         "quaternion_fk": quaternion_fk,
+        "dual_quaternion_fk": dual_quaternion_fk,
         "T_fk": T_fk
     }
