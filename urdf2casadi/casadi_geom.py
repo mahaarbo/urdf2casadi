@@ -269,6 +269,35 @@ def dual_quaternion_to_transformation_matrix(Q):
     return res
 
 
+def dual_quaternion_to_rotation_matrix(Q):
+    """Transforms a dual quaternion to 3x3 rotation matrix
+    """
+    res = cs.MX.zeros(3, 3)
+    xr, yr, zr, wr = Q[0], Q[1], Q[2], Q[3]
+    res[0, 0] = wr*wr + xr*xr - yr*yr - zr*zr
+    res[1, 1] = wr*wr - xr*xr + yr*yr - zr*zr
+    res[2, 2] = wr*wr - xr*xr - yr*yr + zr*zr
+    res[0, 1] = 2.*(xr*yr - wr*zr)
+    res[1, 0] = 2.*(xr*yr + wr*zr)
+    res[0, 2] = 2.*(xr*zr + wr*yr)
+    res[2, 0] = 2.*(xr*zr - wr*yr)
+    res[1, 2] = 2.*(yr*zr - wr*xr)
+    res[2, 1] = 2.*(yr*zr + wr*xr)
+    return res
+
+
+def dual_quaternion_to_position(Q):
+    """Transforms a dual quaternion to a position.
+    """
+    res = cs.MX.zeros(3)
+    xr, yr, zr, wr = Q[0], Q[1], Q[2], Q[3]
+    xd, yd, zd, wd = Q[4], Q[5], Q[6], Q[7]
+    res[0] = 2.*(-wd*xr + xd*wr - yd*zr + zd*yr)
+    res[1] = 2.*(-wd*yr + xd*zr + yd*wr - zd*xr)
+    res[2] = 2.*(-wd*zr - xd*yr + yd*xr + zd*wr)
+    return res
+
+
 def dual_quaternion_rpy(rpy):
     """Returns the dual quaternion for a pure roll-pitch-yaw rotation.
     """
