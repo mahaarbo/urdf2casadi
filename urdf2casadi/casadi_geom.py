@@ -150,6 +150,25 @@ def T_full_symbolic(xyz, rpy):
     return T
 
 
+def T_denavit_hartenberg(thetai, ai, di, alphai):
+    """Returns a transformation matrix based on denavit hartenberg
+    parameters."""
+    T = cs.SX.zeros(4, 4)
+    T[0, 0] = cs.cos(thetai)
+    T[0, 1] = -cs.sin(thetai)*cs.cos(alphai)
+    T[0, 2] = cs.sin(thetai)*cs.sin(alphai)
+    T[0, 3] = ai*cs.cos(thetai)
+    T[1, 0] = cs.sin(thetai)
+    T[1, 1] = cs.cos(thetai)*cs.cos(alphai)
+    T[1, 2] = -cs.cos(thetai)*cs.sin(alphai)
+    T[1, 3] = ai*cs.sin(thetai)
+    T[2, 1] = cs.sin(alphai)
+    T[2, 2] = cs.cos(alphai)
+    T[2, 3] = di
+    T[3, 3] = 1.0
+    return T
+
+
 def quaternion_product(quat0, quat1):
     """Returns the quaternion product of q0 and q1."""
     quat = cs.SX.zeros(4)
@@ -160,6 +179,15 @@ def quaternion_product(quat0, quat1):
     quat[2] = w0*z1 + x0*y1 - y0*x1 + z0*w1
     quat[3] = w0*w1 - x0*x1 - y0*y1 - z0*z1
     return quat
+
+
+def quaternion_conj(quat):
+    res = cs.SX.zeros(4)
+    res[0] = -quat[0]
+    res[1] = -quat[1]
+    res[2] = -quat[2]
+    res[3] = quat[3]
+    return res
 
 
 def dual_quaternion_product(Q, P):
@@ -272,7 +300,7 @@ def dual_quaternion_to_transformation_matrix(Q):
 def dual_quaternion_rpy(rpy):
     """Returns the dual quaternion for a pure roll-pitch-yaw rotation.
     """
-    roll, pitch, yaw = rpy
+    roll, pitch, yaw = rpy[0], rpy[1], rpy[2]
     # Origin rotation from RPY ZYX convention
     cr = cs.cos(roll/2.0)
     sr = cs.sin(roll/2.0)
@@ -339,7 +367,7 @@ def dual_quaternion_prismatic(xyz, rpy, axis, qi):
     """Returns the dual quaternion for a prismatic joint.
     """
     # Joint origin rotation from RPY ZYX convention
-    roll, pitch, yaw = rpy
+    roll, pitch, yaw = rpy[0], rpy[1], rpy[2]
     # Origin rotation from RPY ZYX convention
     cr = cs.cos(roll/2.0)
     sr = cs.sin(roll/2.0)
@@ -379,7 +407,7 @@ def dual_quaternion_revolute(xyz, rpy, axis, qi):
     AXIS MUST BE NORMALIZED!
     """
     # Joint origin rotation from RPY ZYX convention
-    roll, pitch, yaw = rpy
+    roll, pitch, yaw = rpy[0], rpy[1], rpy[2]
     # Origin rotation from RPY ZYX convention
     cr = cs.cos(roll/2.0)
     sr = cs.sin(roll/2.0)
@@ -414,3 +442,22 @@ def dual_quaternion_revolute(xyz, rpy, axis, qi):
     w_jt = 0.0
     Q_j = [x_jr, y_jr, z_jr, w_jr, x_jt, y_jt, z_jt, w_jt]
     return dual_quaternion_product(Q_o, Q_j)
+
+
+def dual_quaternion_to_pos(Q):
+    """Returns the Cartesian position in a dual quaternion."""
+    quaternion_rot_conj = quaternion_conj(Q[:4])
+    quaternion_disp = Q[4:8]
+    return 2*quaternion_product(quaternion_disp, quaternion_rot_conj)[:3]
+
+
+def dual_quaternion_denavit_hartenberg(thetai, ai, di, alphai):
+    """Returns a transformation matrix based on denavit hartenberg
+    parameters."""
+    Q_rot_z = dual_quaternion_axis_rotation([0., 0., 1.], thetai)
+    Q_trans_z = dual_quaternion_axis_translation([0., 0., 1.], di)
+    Q_trans_x = dual_quaternion_axis_translation([1., 0., 0.], ai)
+    Q_rot_x = dual_quaternion_axis_rotation([1., 0., 0.], alphai)
+    Q_z = dual_quaternion_product(Q_rot_z, Q_trans_z)
+    Q_x = dual_quaternion_product(Q_trans_x, Q_rot_x)
+    return dual_quaternion_product(Q_z, Q_x)
