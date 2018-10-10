@@ -150,21 +150,21 @@ def T_full_symbolic(xyz, rpy):
     return T
 
 
-def T_denavit_hartenberg(thetai, ai, di, alphai):
+def T_denavit_hartenberg(joint_angle, link_length, link_offset, link_twist):
     """Returns a transformation matrix based on denavit hartenberg
     parameters."""
     T = cs.SX.zeros(4, 4)
-    T[0, 0] = cs.cos(thetai)
-    T[0, 1] = -cs.sin(thetai)*cs.cos(alphai)
-    T[0, 2] = cs.sin(thetai)*cs.sin(alphai)
-    T[0, 3] = ai*cs.cos(thetai)
-    T[1, 0] = cs.sin(thetai)
-    T[1, 1] = cs.cos(thetai)*cs.cos(alphai)
-    T[1, 2] = -cs.cos(thetai)*cs.sin(alphai)
-    T[1, 3] = ai*cs.sin(thetai)
-    T[2, 1] = cs.sin(alphai)
-    T[2, 2] = cs.cos(alphai)
-    T[2, 3] = di
+    T[0, 0] = cs.cos(joint_angle)
+    T[0, 1] = -cs.sin(joint_angle)*cs.cos(link_twist)
+    T[0, 2] = cs.sin(joint_angle)*cs.sin(link_twist)
+    T[0, 3] = link_length*cs.cos(joint_angle)
+    T[1, 0] = cs.sin(joint_angle)
+    T[1, 1] = cs.cos(joint_angle)*cs.cos(link_twist)
+    T[1, 2] = -cs.cos(joint_angle)*cs.sin(link_twist)
+    T[1, 3] = link_length*cs.sin(joint_angle)
+    T[2, 1] = cs.sin(link_twist)
+    T[2, 2] = cs.cos(link_twist)
+    T[2, 3] = link_offset
     T[3, 3] = 1.0
     return T
 
@@ -451,13 +451,14 @@ def dual_quaternion_to_pos(Q):
     return 2*quaternion_product(quaternion_disp, quaternion_rot_conj)[:3]
 
 
-def dual_quaternion_denavit_hartenberg(thetai, ai, di, alphai):
+def dual_quaternion_denavit_hartenberg(joint_angle, link_length,
+                                       link_offset, link_twist):
     """Returns a transformation matrix based on denavit hartenberg
     parameters."""
-    Q_rot_z = dual_quaternion_axis_rotation([0., 0., 1.], thetai)
-    Q_trans_z = dual_quaternion_axis_translation([0., 0., 1.], di)
-    Q_trans_x = dual_quaternion_axis_translation([1., 0., 0.], ai)
-    Q_rot_x = dual_quaternion_axis_rotation([1., 0., 0.], alphai)
+    Q_rot_z = dual_quaternion_axis_rotation([0., 0., 1.], joint_angle)
+    Q_trans_z = dual_quaternion_axis_translation([0., 0., 1.], link_offset)
+    Q_trans_x = dual_quaternion_axis_translation([1., 0., 0.], link_length)
+    Q_rot_x = dual_quaternion_axis_rotation([1., 0., 0.], link_twist)
     Q_z = dual_quaternion_product(Q_rot_z, Q_trans_z)
     Q_x = dual_quaternion_product(Q_trans_x, Q_rot_x)
     return dual_quaternion_product(Q_z, Q_x)
