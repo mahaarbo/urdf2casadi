@@ -160,7 +160,16 @@ def from_denavit_hartenberg(joint_angles, link_lengths, link_offsets,
             qi = cs.SX.sym("q"+str(i))
             all_props[i] = qi
             all_robot_vars += [qi]
-    q = cs.vertcat(all_robot_vars)
+    # Then put them all back
+    idx = 0
+    joint_angles = all_props[idx:len(joint_angles)]
+    idx += len(joint_angles)
+    link_lengths = all_props[idx:idx+len(link_lengths)]
+    idx += len(link_lengths)
+    link_offsets = all_props[idx: idx+len(link_offsets)]
+    idx += len(link_offsets)
+    link_twists = all_props[idx:]
+    q = cs.vertcat(*all_robot_vars)
     # Then start on forming the expressions
     T_fk = cs.SX.eye(4)
     quaternion_fk = cs.SX.zeros(4)
@@ -184,7 +193,7 @@ def from_denavit_hartenberg(joint_angles, link_lengths, link_offsets,
             dual_quaternion_fk,
             dual_quat_dhi
         )
-    quaternion_fk = cs.Function("quaternion_fk", [q], quaternion_fk)
+    quaternion_fk = cs.Function("quaternion_fk", [q], [quaternion_fk])
     dual_quaternion_fk = cs.Function("dual_quaternion_fk",
                                      [q], [dual_quaternion_fk])
     T_fk = cs.Function("T_fk", [q], [T_fk])
