@@ -4,17 +4,16 @@ casadi function.
 import casadi as cs
 from urdf_parser_py.urdf import URDF, Pose
 from geometry import transformation_matrix as T
+from geometry import plucker
 from geometry import quaternion
 from geometry import dual_quaternion
 
 class URDFparser(object):
 	"""Class that turns a chain from URDF to casadi functions"""
+	actuated_types = ["prismatic", "revolute", "continuous"]
 
 	def __init__(self):
 		self.robot_desc = None
-		self.actuated_types = ["prismatic", "revolute", "continuous"]
-		#self.filename = None
-
 
 	def from_file(self, filename):
 		"""Uses an URDF file to get robot description"""
@@ -27,18 +26,15 @@ class URDFparser(object):
 		self.robot_desc = URDF.from_parameter_server(key=key)
         #self.chain_list = robot_desc.get_chain(root, tip)
 
-
 	def from_string(self, urdfstring):
 		"""Uses a string to get robot description"""
 		self.robot_desc = URDF.from_xml_string(urdfstring)
-        #self.chain_list = self.robot_desc.get_chain(root, tip)
 
-
-	def get_forward_kinematics(self, root, tip):
-		"""Using one of the above to derive info needed for casadi fk"""
+	def get_joint_info(self, root, tip):
+		"""Using an URDF to extract a proper joint_list"""
 		chain = self.robot_desc.get_chain(root, tip)
-		#if self.robot_desc is None:
-			#raise ValueError('Robot description not loaded from urdf')
+		if self.robot_desc is None:
+			raise ValueError('Robot description not loaded from urdf')
 
 		nvar = 0
 		joint_list = []
@@ -69,8 +65,47 @@ class URDFparser(object):
 					elif joint.origin.rpy is None:
 						joint.origin.rpy = [0., 0., 0.]
 
+		return joint_list, nvar, actuated_names, upper, lower
+
+	def get_transforms(self, root, tip):
+		joint_list, nvar, actuated_names, upper, lower = self.get_joint_info(root, tip)
+		i_X_0 = []
+		q = cs.SX.sym("q", nvar)
+
+		i = 1
+		for joint in joint_list:
+			XL = plucker.XL(joint.origin.xyz, joint.origin.rpy)
+			print("la")
+			if joint.type == "fixed":
+				XJ = plucker.X_L(joint.origin.xyz, joint.origin.rpy)
+
+			elif joint.type == "prismatic":
+				XJ = plucker.XJ_prismatic(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
+
+			elif joint.type in ["revolute", "continuous"]:
+				XJ = plucker.XJ_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
+
+			i_X_p = cs.mtimes(XJ, XL)
+
+			#can one in general assume that p(i) = i-1?
+			if ((i-1) != 0):
+				i_X_0.append(cs.mtimes(i_X_p, i_X_0[i-1]))
+			else:
+				i_X_0.append(i_X_p)
+			i += 1
+
+			return i_X_0
+
+
+	def get_forward_kinematics(self, root, tip):
+		"""Using one of the above to derive info needed for casadi fk"""
+		chain = self.robot_desc.get_chain(root, tip)
+		#if self.robot_desc is None:
+			#raise ValueError('Robot description not loaded from urdf')
+		joint_list, nvar, actuated_names, upper, lower = self.get_joint_info(root, tip)
+
 		#make symbolics
-		T_fk = cs.SX.eye(4)#self or not to self?
+		T_fk = cs.SX.eye(4)
 		q = cs.SX.sym("q", nvar)
 		quaternion_fk = cs.SX.zeros(4)
 		quaternion_fk[3] = 1.0
