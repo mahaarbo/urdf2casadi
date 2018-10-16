@@ -13,10 +13,41 @@ def numpy_rotation_rpy(roll, pitch, yaw):
                      [sy*cp,  sy*sp*sr + cy*cr,  sy*sp*cr - cy*sr],
                      [  -sp,             cp*sr,             cp*cr]])
 
+def inertia_matrix(I):
+    """Returns the inertia matrix given the inertia vector """
+    return np.array([I[0], I[1], I[2]], [I[1], I[3], I[4]], [I[2], I[4], I[5]])
+
+#Shouldnt this be correct by looking at page 41?
+#Also says that by constructing Ic one must have the coordinates for the center of mass, why?
+#Are we using Ic or Io in RNEA?
+def spatial_inertia_matrix(ixx, ixy, ixz, iyy, iyz, izz, mass):
+    """Returns a spatial inertia matrix expressed at the center of mass """
+    Ic = np.zeros([6, 6])
+    Ic[:3, :3] = np.array([[ixx, ixy, ixz], [ixy, iyy, iyz], [ixz, iyz, izz]])
+
+    Ic[3, 3] = mass
+    Ic[4, 4] = mass
+    Ic[5, 5] = mass
+
+    #Ic[3, 0] = -mass[2]*c_matrix[1, 0] + mass[1]*c_matrix[2, 0]
+    #Ic[3, 1] = -mass[2]*c_matrix[1, 1] + mass[1]*c_matrix[2, 1]
+    #Ic[3, 2] = -mass[2]*c_matrix[1, 2] + mass[1]*c_matrix[2, 2]
+
+    #Ic[4, 0] = mass[2]*c_matrix[0, 0] - mass[0]*c_matrix[2, 0]
+    #Ic[4, 1] = mass[2]*c_matrix[0, 1] - mass[0]*c_matrix[2, 1]
+    #Ic[4, 2] = mass[2]*c_matrix[0, 2] - mass[0]*c_matrix[2, 2]
+
+    #Ic[5, 0] = -mass[1]*c_matrix[0, 0] + mass[0]*c_matrix[1, 0]
+    #Ic[5, 1] = -mass[1]*c_matrix[0, 1] + mass[0]*c_matrix[1, 1]
+    #Ic[5, 2] = -mass[1]*c_matrix[0, 2] + mass[0]*c_matrix[1, 2]
+
+    return Ic
+
 def XL(xyz, rpy):
     """Returns a Plucker transformation matrix on X_L form"""
     X = np.zeros([6, 6])
 
+    #should i not use numpy this way for calculation?
     rotation_matrix = numpy_rotation_rpy(rpy[0], rpy[1], rpy[2])
 
     X[:3, :3] = rotation_matrix

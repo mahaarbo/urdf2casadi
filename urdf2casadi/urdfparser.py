@@ -67,17 +67,49 @@ class URDFparser(object):
 
 		return joint_list, nvar, actuated_names, upper, lower
 
-	def get_transforms(self, root, tip):
+	def get_spatial_inertias(self, root, tip):
+		chain = self.robot_desc.get_chain(root, tip)
+		#link_list = []
+		spatial_inertias = []
+
+		for item in chain:
+			if item in self.robot_desc.link_map:
+				link = self.robot_desc.link_map[item]
+				#link_list += [link]
+
+				#temporary if. How to set values if link.inertial is None?
+				if link.inertial is not None:
+
+				#if link.inertial is None:
+					#link.inertial.mass.value = 0.
+					#link.inertial.origin.xyz = [0., 0., 0.]
+					#link.inertial.origin.rpy = [0., 0., 0.]
+					#link.inertial.inertia = {ixx: 0., ixy: 0., ixz: 0., iyy: 0., iyz: 0., izz: 0.}
+
+					I = link.inertial.inertia
+					spatial_inertia = plucker.spatial_inertia_matrix(I.ixx, I.ixy, I.ixz, I.iyz, I.iyy, I.izz, link.inertial.mass)
+					spatial_inertias.append(spatial_inertia)
+
+		#for link in link_list:
+			 #link.inertial.inertia is not None:
+
+				#print(link.inertial)
+				#print(link.inertial.inertia)
+				#print(link.inertial.inertia.ixx)
+		return spatial_inertias
+
+
+	def get_spatial_transforms(self, root, tip):
 		joint_list, nvar, actuated_names, upper, lower = self.get_joint_info(root, tip)
+		print(len(joint_list))
 		i_X_0 = []
 		q = cs.SX.sym("q", nvar)
 
-		i = 1
+		i = 0
 		for joint in joint_list:
 			XL = plucker.XL(joint.origin.xyz, joint.origin.rpy)
-			print("la")
 			if joint.type == "fixed":
-				XJ = plucker.X_L(joint.origin.xyz, joint.origin.rpy)
+				XJ = plucker.XL(joint.origin.xyz, joint.origin.rpy)
 
 			elif joint.type == "prismatic":
 				XJ = plucker.XJ_prismatic(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
@@ -87,14 +119,14 @@ class URDFparser(object):
 
 			i_X_p = cs.mtimes(XJ, XL)
 
-			#can one in general assume that p(i) = i-1?
-			if ((i-1) != 0):
-				i_X_0.append(cs.mtimes(i_X_p, i_X_0[i-1]))
-			else:
+			if(i == 0):
 				i_X_0.append(i_X_p)
+
+			else:
+				i_X_0.append(cs.mtimes(i_X_p, i_X_0[i-1]))
 			i += 1
 
-			return i_X_0
+		return i_X_0
 
 
 	def get_forward_kinematics(self, root, tip):
@@ -182,9 +214,3 @@ class URDFparser(object):
 
 	def get_inverse_dynamics_parameters():
 		"""Using one of the above to derive info needed for casadi id"""
-
-
-##Qs:
-#Example - function?
-#numpy_geom
-#URDFparser
