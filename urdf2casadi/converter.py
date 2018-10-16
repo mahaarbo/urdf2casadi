@@ -3,8 +3,8 @@ casadi function.
 """
 import casadi as cs
 from urdf_parser_py.urdf import URDF, Pose
-import casadi_geom
-import numpy_geom
+from urdf2casadi import casadi_geom
+from urdf2casadi import numpy_geom
 
 
 def from_string(root, tip, urdfstring):
