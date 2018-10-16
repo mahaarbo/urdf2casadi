@@ -3,8 +3,8 @@ casadi function.
 """
 import casadi as cs
 from urdf_parser_py.urdf import URDF, Pose
-import casadi_geom
-import numpy_geom
+import urdf2casadi.casadi_geom
+import urdf2casadi.numpy_geom
 
 
 def from_string(root, tip, urdfstring):
@@ -68,17 +68,17 @@ def get_fk_dict(robot_desc, chain):
         if joint.type == "fixed":
             xyz = joint.origin.xyz
             rpy = joint.origin.rpy
-            joint_frame = numpy_geom.T_rpy(xyz,
+            joint_frame = urdf2casadi.numpy_geom.T_rpy(xyz,
                                            *rpy)
-            joint_quaternion = numpy_geom.quaternion_rpy(*rpy)
-            joint_dual_quat = numpy_geom.dual_quaternion_prismatic(xyz,
+            joint_quaternion = urdf2casadi.numpy_geom.quaternion_rpy(*rpy)
+            joint_dual_quat = urdf2casadi.numpy_geom.dual_quaternion_prismatic(xyz,
                                                                    rpy,
                                                                    [1., 0., 0.],
                                                                    0.)
             T_fk = cs.mtimes(T_fk, joint_frame)
-            quaternion_fk = casadi_geom.quaternion_product(quaternion_fk,
+            quaternion_fk = urdf2casadi.casadi_geom.quaternion_product(quaternion_fk,
                                                            joint_quaternion)
-            dual_quaternion_fk = casadi_geom.dual_quaternion_product(
+            dual_quaternion_fk = urdf2casadi.casadi_geom.dual_quaternion_product(
                 dual_quaternion_fk,
                 joint_dual_quat)
         elif joint.type == "prismatic":
@@ -86,18 +86,18 @@ def get_fk_dict(robot_desc, chain):
                 axis = cs.np.array([1., 0., 0.])
             axis = cs.np.array(joint.axis)
             #axis = (1./cs.np.linalg.norm(axis))*axis
-            joint_frame = casadi_geom.T_prismatic(joint.origin.xyz,
+            joint_frame = urdf2casadi.casadi_geom.T_prismatic(joint.origin.xyz,
                                                   joint.origin.rpy,
                                                   joint.axis, q[i])
-            joint_quaternion = numpy_geom.quaternion_rpy(*joint.origin.rpy)
-            joint_dual_quat = casadi_geom.dual_quaternion_prismatic(
+            joint_quaternion = urdf2casadi.numpy_geom.quaternion_rpy(*joint.origin.rpy)
+            joint_dual_quat = urdf2casadi.casadi_geom.dual_quaternion_prismatic(
                 joint.origin.xyz,
                 joint.origin.rpy,
                 axis, q[i])
             T_fk = cs.mtimes(T_fk, joint_frame)
-            quaternion_fk = casadi_geom.quaternion_product(quaternion_fk,
+            quaternion_fk = urdf2casadi.casadi_geom.quaternion_product(quaternion_fk,
                                                            joint_quaternion)
-            dual_quaternion_fk = casadi_geom.dual_quaternion_product(
+            dual_quaternion_fk = urdf2casadi.casadi_geom.dual_quaternion_product(
                 dual_quaternion_fk,
                 joint_dual_quat)
             i += 1
@@ -106,20 +106,20 @@ def get_fk_dict(robot_desc, chain):
                 axis = cs.np.array([1., 0., 0.])
             axis = cs.np.array(joint.axis)
             axis = (1./cs.np.linalg.norm(axis))*axis
-            joint_frame = casadi_geom.T_revolute(joint.origin.xyz,
+            joint_frame = urdf2casadi.casadi_geom.T_revolute(joint.origin.xyz,
                                                  joint.origin.rpy,
                                                  joint.axis, q[i])
-            joint_quaternion = casadi_geom.quaternion_revolute(joint.origin.xyz,
+            joint_quaternion = urdf2casadi.casadi_geom.quaternion_revolute(joint.origin.xyz,
                                                                joint.origin.rpy,
                                                                axis, q[i])
-            joint_dual_quat = casadi_geom.dual_quaternion_revolute(
+            joint_dual_quat = urdf2casadi.casadi_geom.dual_quaternion_revolute(
                 joint.origin.xyz,
                 joint.origin.rpy,
                 axis, q[i])
             T_fk = cs.mtimes(T_fk, joint_frame)
-            quaternion_fk = casadi_geom.quaternion_product(quaternion_fk,
+            quaternion_fk = urdf2casadi.casadi_geom.quaternion_product(quaternion_fk,
                                                            joint_quaternion)
-            dual_quaternion_fk = casadi_geom.dual_quaternion_product(
+            dual_quaternion_fk = urdf2casadi.casadi_geom.dual_quaternion_product(
                 dual_quaternion_fk,
                 joint_dual_quat)
             i += 1
@@ -181,15 +181,15 @@ def from_denavit_hartenberg(joint_angles, link_lengths, link_offsets,
         lli = link_lengths[i]
         loi = link_offsets[i]
         lti = link_twists[i]
-        T_dhi = casadi_geom.T_denavit_hartenberg(jai, lli, loi, lti)
-        dual_quat_dhi = casadi_geom.dual_quaternion_denavit_hartenberg(jai,
+        T_dhi = urdf2casadi.casadi_geom.T_denavit_hartenberg(jai, lli, loi, lti)
+        dual_quat_dhi = urdf2casadi.casadi_geom.dual_quaternion_denavit_hartenberg(jai,
                                                                        lli,
                                                                        loi,
                                                                        lti)
         T_fk = cs.mtimes(T_fk, T_dhi)
-        quaternion_fk = casadi_geom.quaternion_product(quaternion_fk,
+        quaternion_fk = urdf2casadi.casadi_geom.quaternion_product(quaternion_fk,
                                                        dual_quat_dhi[:4])
-        dual_quaternion_fk = casadi_geom.dual_quaternion_product(
+        dual_quaternion_fk = urdf2casadi.casadi_geom.dual_quaternion_product(
             dual_quaternion_fk,
             dual_quat_dhi
         )
