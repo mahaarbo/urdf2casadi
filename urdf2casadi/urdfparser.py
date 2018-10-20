@@ -8,6 +8,8 @@ from geometry import plucker
 from geometry import quaternion
 from geometry import dual_quaternion
 
+#Should we have more object variables so that these are common for whole object?
+
 class URDFparser(object):
 	"""Class that turns a chain from URDF to casadi functions"""
 	actuated_types = ["prismatic", "revolute", "continuous"]
@@ -15,6 +17,7 @@ class URDFparser(object):
 	def __init__(self):
 		self.robot_desc = None
 
+	#Load robot description from urdf methods
 	def from_file(self, filename):
 		"""Uses an URDF file to get robot description"""
 		print filename
@@ -30,6 +33,8 @@ class URDFparser(object):
 		"""Uses a string to get robot description"""
 		self.robot_desc = URDF.from_xml_string(urdfstring)
 
+
+	#helper methods for other methods
 	def get_joint_info(self, root, tip):
 		"""Using an URDF to extract a proper joint_list"""
 		chain = self.robot_desc.get_chain(root, tip)
@@ -99,25 +104,41 @@ class URDFparser(object):
 		return spatial_inertias
 
 
-	def get_spatial_transforms(self, root, tip):
-		joint_list, nvar, actuated_names, upper, lower = self.get_joint_info(root, tip)
-		print(len(joint_list))
+	def jcalc(self, root, tip, q, joint_list):
+		"""Helper function for RNEA which calculates spatial transform matrices and motion subspace matrices"""
+		#joint_list, nvar, actuated_names, upper, lower = self.get_joint_info(root, tip)
 		i_X_0 = []
-		q = cs.SX.sym("q", nvar)
-
+		#q = cs.SX.sym("q", nvar)
+		joint_motions = []
 		i = 0
 		for joint in joint_list:
 			XL = plucker.XL(joint.origin.xyz, joint.origin.rpy)
 			if joint.type == "fixed":
 				XJ = plucker.XL(joint.origin.xyz, joint.origin.rpy)
+				joint_motion = [0, 0, 0, 0, 0, 0]
 
 			elif joint.type == "prismatic":
 				XJ = plucker.XJ_prismatic(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 
+				if joint.axis.xyz[0] is 1:
+					joint_motion = [1, 0, 0, 0, 0, 0]
+				elif joint.axis.xyz[1] is 1:
+					joint_motion = [0, 1, 0, 0, 0, 0]
+				elif joint.axis.xyz[2] is 1:
+					joint_motion = [0, 0, 1, 0, 0, 0]
+
 			elif joint.type in ["revolute", "continuous"]:
 				XJ = plucker.XJ_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 
+				if joint.axis.xyz[0] is 1:
+					joint_motion = [0, 0, 0, 1, 0, 0]
+				elif joint.axis.xyz[1] is 1:
+					joint_motion = [0, 0, 0, 0, 1, 0]
+				elif joint.axis.xyz[2] is 1:
+					joint_motion = [0, 0, 0, 0, 0, 1]
+
 			i_X_p = cs.mtimes(XJ, XL)
+			joint_motions.append(joint_motion)
 
 			if(i == 0):
 				i_X_0.append(i_X_p)
@@ -126,7 +147,66 @@ class URDFparser(object):
 				i_X_0.append(cs.mtimes(i_X_p, i_X_0[i-1]))
 			i += 1
 
-		return i_X_0
+		return i_X_0, joint_motions
+
+	#the actual dynamics & kinematic methods
+
+	def get_inverse_dynamics(self, root, tip):
+		"""Using one of the above to derive info needed for casadi id"""
+
+		joint_list, nvar, actuated_names, upper, lower = self.get_joint_info(root, tip)
+		NB = len(self.robot_desc.link_map)
+		q = cs.SX.sym("q", nvar)
+		q_dot = cs.SX.sym("q_dot", nvar)
+		q_ddot = cs.SX.sym("q_ddot", nvar)
+		Ic = self.get_spatial_inertias(root, tip)
+		i_X_p, motion_space = self.jcalc(root, tip, q, joint_list)
+
+		v = []
+		a = []
+		v.append(np.zeros(6))#kan man bruke numpy eller vanlig lise?
+		a.append([0., 0., 9.81, 0., 0., 0.]) #bruke numpy isteden? Og er 9.81 på riktig sted?
+
+
+		#kan også lage jcalc slik at den finner den direkte inni denne foren..
+		#er dette bedre sånn kjøretidsmessig?
+		for i in range(1, NB):
+			vJ = motion_space[i]*q_dot[i]
+
+			if((i-1) is 0):
+				v.append(vJ)
+				a.append(i_X_p[i]*(-a[i-1]) + motion_space[i]*q_ddot[i])
+			else:
+				v[i] = i_X_p[i]*v[i-1] + vJ #må finne ut av operatorene - hvordan gange sammen osv -> ntimes på vektorer?
+				a[i] = i_X_p[i]*a[i-1] + motion_space[i]*q_ddot[i] + plucker.spatial_cross_product(v(i))*vJ
+
+			f.append(I[i]*a[i-1] - (plucker.spatial_cross_product(v[i])*I[i]*v[i]
+
+			#for i = 1:model.NB
+			 # [ XJ, S{i} ] = jcalc( model.jtype{i}, q(i) );
+			  #vJ = S{i}*qd(i);
+			  #Xup{i} = XJ * model.Xtree{i};
+			  #if model.parent(i) == 0
+			   # v{i} = vJ;
+			   # a{i} = Xup{i}*(-a_grav) + S{i}*qdd(i);
+			  #else
+			   # v{i} = Xup{i}*v{model.parent(i)} + vJ;
+			    #a{i} = Xup{i}*a{model.parent(i)} + S{i}*qdd(i) + crm(v{i})*vJ;
+			  #end
+			  #f{i} = model.I{i}*a{i} + crf(v{i})*model.I{i}*v{i};
+
+			#1. calculate motion_space based on jtype (done?) and q -> where does q come in?
+			#2. calculate motion_space_dot_c based on jype, q and q_dot?
+			#vi = X(i-p(i))*v(p(i)) + motion_space(i)*q_dot(i)
+
+			#which type of operations are better? Not numpy? Own function in plucker for this?
+			#v_i = i_X_p[i].dot(v[i-1]) + joint_motions[i]*q_dot[i]
+
+			#g_i
+			#a_i = ...
+			#f_i = ...
+
+
 
 
 	def get_forward_kinematics(self, root, tip):
@@ -209,8 +289,7 @@ class URDFparser(object):
 		    "dual_quaternion_fk": dual_quaternion_fk,
 		    "T_fk": T_fk
 		}
-	def get_inverse_dynamics():
-		"""Using one of the above to derive info needed for casadi id"""
+
 
 	def get_inverse_dynamics_parameters():
 		"""Using one of the above to derive info needed for casadi id"""

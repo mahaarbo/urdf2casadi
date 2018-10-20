@@ -20,6 +20,19 @@ def inertia_matrix(I):
 #Shouldnt this be correct by looking at page 41?
 #Also says that by constructing Ic one must have the coordinates for the center of mass, why?
 #Are we using Ic or Io in RNEA?
+def spatial_cross_product(v):
+    """Returns the cross product matrix of a spatial vector"""
+    cross_matrix = np.zeros([6, 6])
+    crp_1 = np.array([[0 -v[2] v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    crp_2 = np.array([[0 -v[6] v[5]], [v[6], 0, -v[4]], [-v[5], v[4], 0]])
+
+    cross_matrix[:3, :3] = crp_1
+    cross_matrix[3:, 3:] = crp_1
+    cross_matrix[3:, :3] = crp_2
+
+    return cross_matrix
+
+
 def spatial_inertia_matrix(ixx, ixy, ixz, iyy, iyz, izz, mass):
     """Returns a spatial inertia matrix expressed at the center of mass """
     Ic = np.zeros([6, 6])
@@ -28,18 +41,6 @@ def spatial_inertia_matrix(ixx, ixy, ixz, iyy, iyz, izz, mass):
     Ic[3, 3] = mass
     Ic[4, 4] = mass
     Ic[5, 5] = mass
-
-    #Ic[3, 0] = -mass[2]*c_matrix[1, 0] + mass[1]*c_matrix[2, 0]
-    #Ic[3, 1] = -mass[2]*c_matrix[1, 1] + mass[1]*c_matrix[2, 1]
-    #Ic[3, 2] = -mass[2]*c_matrix[1, 2] + mass[1]*c_matrix[2, 2]
-
-    #Ic[4, 0] = mass[2]*c_matrix[0, 0] - mass[0]*c_matrix[2, 0]
-    #Ic[4, 1] = mass[2]*c_matrix[0, 1] - mass[0]*c_matrix[2, 1]
-    #Ic[4, 2] = mass[2]*c_matrix[0, 2] - mass[0]*c_matrix[2, 2]
-
-    #Ic[5, 0] = -mass[1]*c_matrix[0, 0] + mass[0]*c_matrix[1, 0]
-    #Ic[5, 1] = -mass[1]*c_matrix[0, 1] + mass[0]*c_matrix[1, 1]
-    #Ic[5, 2] = -mass[1]*c_matrix[0, 2] + mass[0]*c_matrix[1, 2]
 
     return Ic
 
