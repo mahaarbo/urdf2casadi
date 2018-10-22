@@ -1,6 +1,12 @@
 import casadi as cs
 import numpy as np
 
+def numpy_skew_symmetric(v):
+    """Returns a skew symmetric matrix from vector. p q r"""
+    return np.array([[0, -v[2], v[1]],
+                     [v[2], 0, -v[0]],
+                     [-v[1], v[0], 0]])
+
 def numpy_rotation_rpy(roll, pitch, yaw):
     """Returns a rotation matrix from roll pitch yaw. ZYX convention."""
     cr = np.cos(roll)
@@ -17,18 +23,16 @@ def inertia_matrix(I):
     """Returns the inertia matrix given the inertia vector """
     return np.array([I[0], I[1], I[2]], [I[1], I[3], I[4]], [I[2], I[4], I[5]])
 
-#Shouldnt this be correct by looking at page 41?
-#Also says that by constructing Ic one must have the coordinates for the center of mass, why?
-#Are we using Ic or Io in RNEA?
+
 def spatial_cross_product(v):
     """Returns the cross product matrix of a spatial vector"""
     cross_matrix = np.zeros([6, 6])
-    crp_1 = np.array([[0 -v[2] v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-    crp_2 = np.array([[0 -v[6] v[5]], [v[6], 0, -v[4]], [-v[5], v[4], 0]])
+    #crp_1 = np.array([[0 -v[2] v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    #crp_2 = np.array([[0 -v[6] v[5]], [v[6], 0, -v[4]], [-v[5], v[4], 0]])
 
-    cross_matrix[:3, :3] = crp_1
-    cross_matrix[3:, 3:] = crp_1
-    cross_matrix[3:, :3] = crp_2
+    cross_matrix[:3, :3] = numpy_skew_symmetric(v[:3])
+    cross_matrix[3:, 3:] = numpy_skew_symmetric(v[:3])
+    cross_matrix[3:, :3] = numpy_skew_symmetric(v[3:])
 
     return cross_matrix
 

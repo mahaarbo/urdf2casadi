@@ -2,6 +2,7 @@
 casadi function.
 """
 import casadi as cs
+import numpy as np
 from urdf_parser_py.urdf import URDF, Pose
 from geometry import transformation_matrix as T
 from geometry import plucker
@@ -76,40 +77,25 @@ class URDFparser(object):
 		chain = self.robot_desc.get_chain(root, tip)
 		#link_list = []
 		spatial_inertias = []
+		NB = 0
 
 		for item in chain:
 			if item in self.robot_desc.link_map:
 				link = self.robot_desc.link_map[item]
-				#link_list += [link]
-
-				#temporary if. How to set values if link.inertial is None?
+				NB += 1
 				if link.inertial is not None:
-
-				#if link.inertial is None:
-					#link.inertial.mass.value = 0.
-					#link.inertial.origin.xyz = [0., 0., 0.]
-					#link.inertial.origin.rpy = [0., 0., 0.]
-					#link.inertial.inertia = {ixx: 0., ixy: 0., ixz: 0., iyy: 0., iyz: 0., izz: 0.}
-
 					I = link.inertial.inertia
 					spatial_inertia = plucker.spatial_inertia_matrix(I.ixx, I.ixy, I.ixz, I.iyz, I.iyy, I.izz, link.inertial.mass)
 					spatial_inertias.append(spatial_inertia)
 
-		#for link in link_list:
-			 #link.inertial.inertia is not None:
-
-				#print(link.inertial)
-				#print(link.inertial.inertia)
-				#print(link.inertial.inertia.ixx)
-		return spatial_inertias
+		return spatial_inertias, NB
 
 
 	def jcalc(self, root, tip, q, joint_list):
 		"""Helper function for RNEA which calculates spatial transform matrices and motion subspace matrices"""
-		#joint_list, nvar, actuated_names, upper, lower = self.get_joint_info(root, tip)
 		i_X_0 = []
-		#q = cs.SX.sym("q", nvar)
 		joint_motions = []
+		joint_motion = [0, 0, 0, 0, 0, 0]
 		i = 0
 		for joint in joint_list:
 			XL = plucker.XL(joint.origin.xyz, joint.origin.rpy)
@@ -129,13 +115,12 @@ class URDFparser(object):
 
 			elif joint.type in ["revolute", "continuous"]:
 				XJ = plucker.XJ_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
-
-				if joint.axis.xyz[0] is 1:
+				if joint.axis[0] is 1:
 					joint_motion = [0, 0, 0, 1, 0, 0]
-				elif joint.axis.xyz[1] is 1:
-					joint_motion = [0, 0, 0, 0, 1, 0]
-				elif joint.axis.xyz[2] is 1:
-					joint_motion = [0, 0, 0, 0, 0, 1]
+				elif joint.axis[1] is 1:
+					joint_motion = [0, 1, 0, 0, 1, 0]
+				elif joint.axis[2] is 1:
+					joint_motion = [0, 0, 1, 0, 0, 1]
 
 			i_X_p = cs.mtimes(XJ, XL)
 			joint_motions.append(joint_motion)
@@ -149,64 +134,39 @@ class URDFparser(object):
 
 		return i_X_0, joint_motions
 
-	#the actual dynamics & kinematic methods
 
 	def get_inverse_dynamics(self, root, tip):
 		"""Using one of the above to derive info needed for casadi id"""
 
 		joint_list, nvar, actuated_names, upper, lower = self.get_joint_info(root, tip)
-		NB = len(self.robot_desc.link_map)
 		q = cs.SX.sym("q", nvar)
 		q_dot = cs.SX.sym("q_dot", nvar)
 		q_ddot = cs.SX.sym("q_ddot", nvar)
-		Ic = self.get_spatial_inertias(root, tip)
-		i_X_p, motion_space = self.jcalc(root, tip, q, joint_list)
+		i_X_0, motion_space = self.jcalc(root, tip, q, joint_list)
+		Ic, NB = self.get_spatial_inertias(root, tip)
+
+		print(NB)
 
 		v = []
 		a = []
+		f = []
 		v.append(np.zeros(6))#kan man bruke numpy eller vanlig lise?
-		a.append([0., 0., 9.81, 0., 0., 0.]) #bruke numpy isteden? Og er 9.81 på riktig sted?
+		a.append([0., 0., 9.81, 0., 0., 0.])
 
-
-		#kan også lage jcalc slik at den finner den direkte inni denne foren..
-		#er dette bedre sånn kjøretidsmessig?
-		for i in range(1, NB):
-			vJ = motion_space[i]*q_dot[i]
+		for i in range(1, NB-2):
+			vJ = cs.mtimes(motion_space[i],q_dot[i])
+			#vJ = motion_space[i]*q_dot[i]
 
 			if((i-1) is 0):
 				v.append(vJ)
-				a.append(i_X_p[i]*(-a[i-1]) + motion_space[i]*q_ddot[i])
+				a.append(cs.mtimes(i_X_0[i], (-np.transpose(a[i-1]))) + cs.mtimes(motion_space[i], q_ddot[i]))
 			else:
-				v[i] = i_X_p[i]*v[i-1] + vJ #må finne ut av operatorene - hvordan gange sammen osv -> ntimes på vektorer?
-				a[i] = i_X_p[i]*a[i-1] + motion_space[i]*q_ddot[i] + plucker.spatial_cross_product(v(i))*vJ
+				v.append(cs.mtimes(i_X_0[i], v[i-1]) + motion_space[i]*q_dot[i])
+				a.append(cs.mtimes(i_X_0[i], a[i-1]) + cs.mtimes(motion_space[i],q_ddot[i]) + cs.mtimes(plucker.spatial_cross_product(v[i]),vJ))
 
-			f.append(I[i]*a[i-1] - (plucker.spatial_cross_product(v[i])*I[i]*v[i]
+			f.append(cs.mtimes(i_X_0[i], a[i-1]) - cs.mtimes(plucker.spatial_cross_product(v[i]), cs.mtimes(i_X_0[i], v[i-1])))
 
-			#for i = 1:model.NB
-			 # [ XJ, S{i} ] = jcalc( model.jtype{i}, q(i) );
-			  #vJ = S{i}*qd(i);
-			  #Xup{i} = XJ * model.Xtree{i};
-			  #if model.parent(i) == 0
-			   # v{i} = vJ;
-			   # a{i} = Xup{i}*(-a_grav) + S{i}*qdd(i);
-			  #else
-			   # v{i} = Xup{i}*v{model.parent(i)} + vJ;
-			    #a{i} = Xup{i}*a{model.parent(i)} + S{i}*qdd(i) + crm(v{i})*vJ;
-			  #end
-			  #f{i} = model.I{i}*a{i} + crf(v{i})*model.I{i}*v{i};
-
-			#1. calculate motion_space based on jtype (done?) and q -> where does q come in?
-			#2. calculate motion_space_dot_c based on jype, q and q_dot?
-			#vi = X(i-p(i))*v(p(i)) + motion_space(i)*q_dot(i)
-
-			#which type of operations are better? Not numpy? Own function in plucker for this?
-			#v_i = i_X_p[i].dot(v[i-1]) + joint_motions[i]*q_dot[i]
-
-			#g_i
-			#a_i = ...
-			#f_i = ...
-
-
+		return f
 
 
 	def get_forward_kinematics(self, root, tip):
