@@ -94,45 +94,46 @@ class URDFparser(object):
 	def jcalc(self, root, tip, q, joint_list):
 		"""Helper function for RNEA which calculates spatial transform matrices and motion subspace matrices"""
 		i_X_0 = []
+		i_X_p = []
 		joint_motions = []
-		joint_motion = [0, 0, 0, 0, 0, 0]
+		joint_motion = cs.SX.zeros(6,1)
 		i = 0
+		
 		for joint in joint_list:
 			XL = plucker.XL(joint.origin.xyz, joint.origin.rpy)
 			if joint.type == "fixed":
 				XJ = plucker.XL(joint.origin.xyz, joint.origin.rpy)
-				joint_motion = [0, 0, 0, 0, 0, 0]
 
 			elif joint.type == "prismatic":
 				XJ = plucker.XJ_prismatic(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 
 				if joint.axis.xyz[0] is 1:
-					joint_motion = [1, 0, 0, 0, 0, 0]
+					joint_motion = cs.SX([1, 0, 0, 0, 0, 0])
 				elif joint.axis.xyz[1] is 1:
-					joint_motion = [0, 1, 0, 0, 0, 0]
+					joint_motion = cs.SX([0, 1, 0, 0, 0, 0])
 				elif joint.axis.xyz[2] is 1:
-					joint_motion = [0, 0, 1, 0, 0, 0]
+					joint_motion = cs.SX([0, 0, 1, 0, 0, 0])
 
 			elif joint.type in ["revolute", "continuous"]:
 				XJ = plucker.XJ_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 				if joint.axis[0] is 1:
-					joint_motion = [0, 0, 0, 1, 0, 0]
+					joint_motion = cs.SX([0, 0, 0, 1, 0, 0])
 				elif joint.axis[1] is 1:
-					joint_motion = [0, 1, 0, 0, 1, 0]
+					joint_motion = cs.SX([0, 0, 0, 0, 1, 0])
 				elif joint.axis[2] is 1:
-					joint_motion = [0, 0, 1, 0, 0, 1]
+					joint_motion = cs.SX([0, 0, 0, 0, 0, 1])
 
-			i_X_p = cs.mtimes(XJ, XL)
+			i_X_p.append(cs.mtimes(XJ, XL))
 			joint_motions.append(joint_motion)
 
 			if(i == 0):
-				i_X_0.append(i_X_p)
+				i_X_0.append(i_X_p[i])
 
 			else:
-				i_X_0.append(cs.mtimes(i_X_p, i_X_0[i-1]))
+				i_X_0.append(cs.mtimes(i_X_p[i], i_X_0[i-1]))
 			i += 1
 
-		return i_X_0, joint_motions
+		return i_X_p, i_X_0, joint_motions
 
 
 	def get_inverse_dynamics(self, root, tip):
@@ -142,31 +143,46 @@ class URDFparser(object):
 		q = cs.SX.sym("q", nvar)
 		q_dot = cs.SX.sym("q_dot", nvar)
 		q_ddot = cs.SX.sym("q_ddot", nvar)
-		i_X_0, motion_space = self.jcalc(root, tip, q, joint_list)
+		i_X_p, i_X_0, motion_space = self.jcalc(root, tip, q, joint_list)
 		Ic, NB = self.get_spatial_inertias(root, tip)
-
-		print(NB)
 
 		v = []
 		a = []
 		f = []
-		v.append(np.zeros(6))#kan man bruke numpy eller vanlig lise?
-		a.append([0., 0., 9.81, 0., 0., 0.])
+		tau = []
+		print "NB: ",NB
+		print "NJ: ",len(joint_list)
+		print q
 
-		for i in range(1, NB-2):
-			vJ = cs.mtimes(motion_space[i],q_dot[i])
-			#vJ = motion_space[i]*q_dot[i]
+		v.append(cs.SX.zeros(6,1))
+		a.append(cs.SX([0., 0., 9.81, 0., 0., 0.]))
 
-			if((i-1) is 0):
-				v.append(vJ)
-				a.append(cs.mtimes(i_X_0[i], (-np.transpose(a[i-1]))) + cs.mtimes(motion_space[i], q_ddot[i]))
+		for i in range(1, NB-1):
+			if (joint_list[i].type == "fixed"):
+				if((i-1) is 0):
+					v.append(v[i-1])
+					a.append(cs.mtimes(i_X_p[i], a[i-1]))#dim 6x1
+				else:
+					v.append(cs.mtimes(i_X_p[i], v[i-1]))#dim 6x1
+					a.append(cs.mtimes(i_X_p[i], a[i-1]))#dim 6x1
 			else:
-				v.append(cs.mtimes(i_X_0[i], v[i-1]) + motion_space[i]*q_dot[i])
-				a.append(cs.mtimes(i_X_0[i], a[i-1]) + cs.mtimes(motion_space[i],q_ddot[i]) + cs.mtimes(plucker.spatial_cross_product(v[i]),vJ))
+				vJ = cs.mtimes(motion_space[i],q_dot[i])#dim 6x1
 
-			f.append(cs.mtimes(i_X_0[i], a[i-1]) - cs.mtimes(plucker.spatial_cross_product(v[i]), cs.mtimes(i_X_0[i], v[i-1])))
+				if((i-1) is 0):
+					v.append(vJ)
+					a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(motion_space[i], q_ddot[i]))#dim 6x1
+				else:
+					v.append(cs.mtimes(i_X_p[i], v[i-1]) + motion_space[i]*q_dot[i])#dim 6x1
+					a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(motion_space[i],q_ddot[i]) + cs.mtimes(plucker.spatial_cross_product(v[i]),vJ))
 
-		return f
+				f.append(cs.mtimes(Ic[i], a[i]) - cs.mtimes(plucker.spatial_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
+
+		for i in range((len(f)-1), -1, -1):
+			tau.insert(i,(cs.mtimes(motion_space[i].T, f[i])))#dim 1x1
+    		if (i-1) is not 0:
+        		f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])#dim 6x6
+
+
 
 
 	def get_forward_kinematics(self, root, tip):
