@@ -24,17 +24,20 @@ def inertia_matrix(I):
     return np.array([I[0], I[1], I[2]], [I[1], I[3], I[4]], [I[2], I[4], I[5]])
 
 
-def spatial_cross_product(v):
+def motion_cross_product(v):
     """Returns the cross product matrix of a spatial vector"""
     cross_matrix = np.zeros([6, 6])
-    #crp_1 = np.array([[0 -v[2] v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-    #crp_2 = np.array([[0 -v[6] v[5]], [v[6], 0, -v[4]], [-v[5], v[4], 0]])
-
-    cross_matrix[:3, :3] = numpy_skew_symmetric(v[:3])
-    cross_matrix[3:, 3:] = numpy_skew_symmetric(v[:3])
-    cross_matrix[3:, :3] = numpy_skew_symmetric(v[3:])
+    skew1 = numpy_skew_symmetric(v[:3])
+    skew2 = numpy_skew_symmetric(v[3:])
+    
+    cross_matrix[:3, :3] = skew1
+    cross_matrix[3:, 3:] = skew1
+    cross_matrix[3:, :3] = skew2
 
     return cross_matrix
+
+def force_cross_product(v):
+    return -motion_cross_product(v).T
 
 
 def spatial_inertia_matrix(ixx, ixy, ixz, iyy, iyz, izz, mass):
