@@ -49,7 +49,6 @@ class URDFparser(object):
 		if self.robot_desc is None:
 			raise ValueError('Robot description not loaded from urdf')
 
-		nvar = 0
 		joint_list = []
 		upper = []
 		lower = []
@@ -60,7 +59,6 @@ class URDFparser(object):
 				joint = self.robot_desc.joint_map[item]
 				joint_list += [joint]
 				if joint.type in self.actuated_types:
-					nvar += 1
 					actuated_names += [joint.name]
 					if joint.type == "continuous":
 						upper += [cs.inf]
@@ -78,7 +76,7 @@ class URDFparser(object):
 					elif joint.origin.rpy is None:
 						joint.origin.rpy = [0., 0., 0.]
 
-		return joint_list, nvar, actuated_names, upper, lower
+		return joint_list, actuated_names, upper, lower
 
 	def _get_spatial_inertias(self, root, tip):
 		chain = self.robot_desc.get_chain(root, tip)
@@ -98,12 +96,12 @@ class URDFparser(object):
 		return spatial_inertias, n_bodies
 
 
-	def _get_transforms_and_jointspace(self, q, joint_list):
+	def _get_spatial_transforms_and_joint_space(self, q, joint_list):
 		"""Helper function for RNEA which calculates spatial transform matrices and motion subspace matrices"""
 		i_X_0 = []
 		i_X_p = []
-		joint_motions = []
-		joint_motion = cs.SX.zeros(6,1)
+		joint_spaces = []
+		joint_space = cs.SX.zeros(6,1)
 		i = 0
 
 		for joint in joint_list:
@@ -115,23 +113,23 @@ class URDFparser(object):
 				XJ = plucker.XJ_prismatic(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 
 				if joint.axis.xyz[0] is 1:
-					joint_motion = cs.SX([1, 0, 0, 0, 0, 0])
+					joint_space = cs.SX([1, 0, 0, 0, 0, 0])
 				elif joint.axis.xyz[1] is 1:
-					joint_motion = cs.SX([0, 1, 0, 0, 0, 0])
+					joint_space = cs.SX([0, 1, 0, 0, 0, 0])
 				elif joint.axis.xyz[2] is 1:
-					joint_motion = cs.SX([0, 0, 1, 0, 0, 0])
+					joint_space = cs.SX([0, 0, 1, 0, 0, 0])
 
 			elif joint.type in ["revolute", "continuous"]:
 				XJ = plucker.XJ_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 				if joint.axis[0] is 1:
-					joint_motion = cs.SX([0, 0, 0, 1, 0, 0])
+					joint_space = cs.SX([0, 0, 0, 1, 0, 0])
 				elif joint.axis[1] is 1:
-					joint_motion = cs.SX([0, 0, 0, 0, 1, 0])
+					joint_space = cs.SX([0, 0, 0, 0, 1, 0])
 				elif joint.axis[2] is 1:
-					joint_motion = cs.SX([0, 0, 0, 0, 0, 1])
+					joint_space = cs.SX([0, 0, 0, 0, 0, 1])
 
 			i_X_p.append(cs.mtimes(XJ, XL))
-			joint_motions.append(joint_motion)
+			joint_spaces.append(joint_space)
 
 			if(i == 0):
 				i_X_0.append(i_X_p[i])
@@ -140,17 +138,28 @@ class URDFparser(object):
 				i_X_0.append(cs.mtimes(i_X_p[i], i_X_0[i-1]))
 			i += 1
 
-		return i_X_p, i_X_0, joint_motions
+		return i_X_p, i_X_0, joint_spaces
 
 
-	def get_inverse_dynamics(self, root, tip):
-		"""Calculates and returns the casadi inverse dynamics using RNEA"""
 
-		joint_list, nvar, actuated_names, upper, lower = self._get_joint_info(root, tip)
-		q = cs.SX.sym("q", nvar)
-		q_dot = cs.SX.sym("q_dot", nvar)
-		q_ddot = cs.SX.sym("q_ddot", nvar)
-		i_X_p, i_X_0, jointspace = self._get_transforms_and_jointspace(q, joint_list)
+
+	def _apply_external_forces(external_f, f):
+		for i in range(0, len(f)):
+			f[i] += external_f[i]
+		return f
+
+
+
+
+	def get_inverse_dynamics_RNEA(self, root, tip, f_ext = None):
+		"""Calculates and returns the casadi inverse dynamics, aka tau, using RNEA"""
+
+		joint_list, actuated_names, upper, lower = self._get_joint_info(root, tip)
+		n_joints = len(joint_list)
+		q = cs.SX.sym("q", n_joints)
+		q_dot = cs.SX.sym("q_dot", n_joints)
+		q_ddot = cs.SX.sym("q_ddot", n_joints)
+		i_X_p, i_X_0, joint_space = self._get_spatial_transforms_and_joint_space(q, joint_list)
 		Ic, n_bodies = self._get_spatial_inertias(root, tip)
 
 		v = []
@@ -160,34 +169,36 @@ class URDFparser(object):
 		tau = cs.SX.zeros(n_bodies-1)
 		print "n_bodies: ",n_bodies
 		print "n_joints: ",len(joint_list)
+		#print q
 
-		print q
-
-		v.append(cs.SX.zeros(6,1))
-		a.append(cs.SX([0., 0., 9.81, 0., 0., 0.]))
+		v0 = cs.SX.zeros(6,1)
+		a_gravity = cs.SX([0., 0., 0., 0., 0., 9.81])
 
 		for i in range(0, n_bodies-1):
 			if (joint_list[i].type == "fixed"):
 				if((i-1) is -1):
-					v.append(v[i])
-					a.append(cs.mtimes(i_X_p[i], a[i]))#dim 6x1
+					v.append(v0)
+					a.append(cs.mtimes(i_X_p[i], -a_gravity))
 				else:
-					v.append(cs.mtimes(i_X_p[i], v[i-1]))#dim 6x1
-					a.append(cs.mtimes(i_X_p[i], a[i-1]))#dim 6x1
+					v.append(cs.mtimes(i_X_p[i], v[i-1]))
+					a.append(cs.mtimes(i_X_p[i], a[i-1]))
 			else:
-				vJ = cs.mtimes(jointspace[i],q_dot[i])#dim 6x1
+				vJ = cs.mtimes(joint_space[i],q_dot[i])
 
 				if((i-1) is -1):
 					v.append(vJ)
-					a.append(cs.mtimes(i_X_p[i], a[i]) + cs.mtimes(jointspace[i], q_ddot[i]))
+					a.append(cs.mtimes(i_X_p[i], -a_gravity) + vJ)
 				else:
-					v.append(cs.mtimes(i_X_p[i], v[i-1]) + jointspace[i]*q_dot[i])
-					a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(jointspace[i],q_ddot[i]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
+					v.append(cs.mtimes(i_X_p[i], v[i-1]) + joint_space[i]*q_dot[i])
+					a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(joint_space[i],q_ddot[i]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
 
 			f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
 
+		if f_ext is not None:
+			f = self._apply_external_forces(f_ext, f)
+
 		for i in range((n_bodies-2), -1, -1):
-			tau[i] = cs.mtimes(jointspace[i].T, f[i])
+			tau[i] = cs.mtimes(joint_space[i].T, f[i])
 			if (i-1) is not -1:
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
@@ -200,77 +211,171 @@ class URDFparser(object):
 
 
 
-	def _get_jointspace_inertia_matrix(self, Ic, i_X_p, jointspace, n_bodies):
-			""" """
+
+	def _get_jointpace_inertia_matrix(self, Ic, i_X_p, joint_space, n_bodies):
+			"""Returns the joint space inertia matrix aka the H-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
 			H = cs.SX.zeros(n_bodies-1, n_bodies-1)
 
 			for i in range(n_bodies-2, -1, -1):
-				Ic[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic[i], i_X_p[i]))
+				Ic[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ic[i], i_X_p[i]))
 
 			for i in range(0, n_bodies-1):
-				fh = cs.mtimes(Ic[i], jointspace[i])
-				H[i, i] = cs.mtimes(jointspace[i].T, fh)
+				fh = cs.mtimes(Ic[i], joint_space[i])
+				H[i, i] = cs.mtimes(joint_space[i].T, fh)
 				j = i
 				while (j-1) is not -1:
 					fh = cs.mtimes(i_X_p[j].T, fh)
 					j -= 1
-					H[i,j] = cs.mtimes(jointspace[j].T, fh)
+					H[i,j] = cs.mtimes(joint_space[j].T, fh)
 					H[j,i] = H[i,j]
 			return H
 
-	def _get_jointspace_bias_matrix(self, joint_list, i_X_p, jointspace, Ic, q, q_dot, n_bodies):
-			""" """
+
+
+
+	def _get_jointspace_bias_matrix(self, joint_list, i_X_p, joint_space, Ic, q, q_dot, n_bodies, f_ext = None):
+			"""Returns the joint space bias matrix aka the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
 			v = []
 			a = []
 			f = []
 			C = cs.SX.zeros(n_bodies-1)
-			v.append(cs.SX.zeros(6,1))
-			a.append(cs.SX([0., 0., 9.81, 0., 0., 0.]))
+			v0 = cs.SX.zeros(6,1)
+			a_gravity = cs.SX([0., 0., 9.81, 0., 0., 0.])
 
 			for i in range(0, n_bodies-1):
 				if (joint_list[i].type == "fixed"):
 					if((i-1) is -1):
-						v.append(v[i])
-						a.append(cs.mtimes(i_X_p[i], a[i]))
+						v.append(v0)
+						a.append(cs.mtimes(i_X_p[i], -a_gravity))
 					else:
 						v.append(cs.mtimes(i_X_p[i], v[i-1]))
 						a.append(cs.mtimes(i_X_p[i], a[i-1]))
 				else:
-					vJ = cs.mtimes(jointspace[i],q_dot[i])
+					vJ = cs.mtimes(joint_space[i],q_dot[i])
 
 					if((i-1) is -1):
 						v.append(vJ)
-						a.append(cs.mtimes(i_X_p[i], a[i]))
+						a.append(cs.mtimes(i_X_p[i], -a_gravity))
 					else:
-						v.append(cs.mtimes(i_X_p[i], v[i-1]) + jointspace[i]*q_dot[i])
+						v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
 						a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
 
 				f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
 
+			if f_ext is not None:
+				f = self._apply_external_forces(f_ext, f)
+
 			for i in range((n_bodies-2), -1, -1):
-				C[i] = cs.mtimes(jointspace[i].T, f[i])
+				C[i] = cs.mtimes(joint_space[i].T, f[i])
 	    		#if (i-1) is not 0:
 	        		#f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 			return C
 
-	def get_forward_dynamics(self, root, tip, tau):
-			"""Returns the casadi forward dynamics using the inertia matrix method/composite rigid body algorithm"""
 
-			joint_list, nvar, actuated_names, upper, lower = self._get_joint_info(root, tip)
-			q = cs.SX.sym("q", nvar)
-			q_dot = cs.SX.sym("q_dot", nvar)
-			q_ddot = cs.SX.zeros(nvar)
-			i_X_p, i_X_0, jointspace = self._get_transforms_and_jointspace(q, joint_list)
+
+	def get_forward_dynamics_CRBA(self, root, tip, tau):
+			"""Returns the casadi forward dynamics using one of the inertia matrix method - composite rigid body algorithm"""
+
+			joint_list, actuated_names, upper, lower = self._get_joint_info(root, tip)
+			n_joints = len(joint_list)
+			q = cs.SX.sym("q", n_joints)
+			q_dot = cs.SX.sym("q_dot", n_joints)
+			q_ddot = cs.SX.zeros(n_joints)
+			i_X_p, i_X_0, joint_space = self._get_spatial_transforms_and_joint_space(q, joint_list)
 			Ic, n_bodies = self._get_spatial_inertias(root, tip)
 
-			H = self._get_jointspace_inertia_matrix(Ic, i_X_p, jointspace, n_bodies)
+			H = self._get_jointpace_inertia_matrix(Ic, i_X_p, joint_space, n_bodies)
 			H_inv = cs.solve(H, cs.SX.eye(H.size1()))
-			C = self._get_jointspace_bias_matrix(joint_list, i_X_p, jointspace, Ic, q, q_dot, n_bodies)
+			C = self._get_jointspace_bias_matrix(joint_list, i_X_p, joint_space, Ic, q, q_dot, n_bodies)
 
 			q_ddot = cs.mtimes(H_inv, (tau - C))
 			q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot])
 
 			return q_ddot
+
+
+
+	def get_forward_dynamics_ABA(self, root, tip, tau, f_ext = None):
+		"""Returns the casadi forward dynamics using the inertia articulated rigid body algorithm"""
+
+		joint_list, actuated_names, upper, lower = self._get_joint_info(root, tip)
+		n_joints = len(joint_list)
+		q = cs.SX.sym("q", n_joints)
+		q_dot = cs.SX.sym("q_dot", n_joints)
+		q_ddot = cs.SX.zeros(n_joints)
+		i_X_p, i_X_0, joint_space = self._get_spatial_transforms_and_joint_space(q, joint_list)
+		Ic, n_bodies = self._get_spatial_inertias(root, tip)
+
+		v = []
+		c = []
+		pA = []
+
+		#Er en av måtene å deklarere bedre på?
+		#U = cs.SX.zeros(6, n_joints)
+		#d = cs.SX.zeros(1, n_joints)
+		u = cs.SX.zeros(1, n_bodies-1)
+		U = [None]*n_joints
+		d = [None]*n_joints
+		zeros = cs.SX.zeros(6)
+
+		for i in range(0, n_joints):
+			if (joint_list[i].type == "fixed"):
+				if((i-1) is -1):
+					v.append(zeros)
+					c.append(zeros)
+				else:
+					v.append(cs.mtimes(i_X_p[i], v[i-1]))
+					c.append(cs.mtimes(plucker.motion_cross_product(v[i]), vJ))
+
+			else:
+				vJ = cs.mtimes(joint_space[i], q_dot[i])
+				if i-1 is -1:
+					v.append(vJ)
+					c.append(cs.SX.zeros(6))
+				else:
+					v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
+					c.append(cs.mtimes(plucker.motion_cross_product(v[i]), vJ))
+
+			pA.append(cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))
+
+		if f_ext is not None:
+			pA = self._apply_external_forces(f_ext, pa)
+
+		for i in range(n_bodies-2, -1, -1):
+			#U[:6,i] = cs.mtimes(Ic[i], joint_space[i])#6x6 * 6x1 = 6x1
+			U[i] = cs.mtimes(Ic[i], joint_space[i])#6x6 * 6x1 = 6x1
+			#d[i] = cs.mtimes(joint_space[i].T, U[:6,i])#1x6 x 6x1 = 1x1
+			d[i] = cs.mtimes(joint_space[i].T, U[i])
+			u[i] = tau[i] - cs.mtimes(joint_space[i].T, pA[i]) # 1x1 - 1x6 x 6x1 = 1x1
+			if i-1 is not -1:
+				#Hva brukes disse til?
+				Ia = Ic[i] - (cs.mtimes(U[i], U[i].T)/d[i])
+				pa = pA[i] + cs.mtimes(Ic[i], c[i]) + cs.mtimes(U[i], u[i]/d[i])
+				Ic[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ia, i_X_p[i]))
+				pA[i-1] += cs.mtimes(i_X_p[i].T, pa)
+
+		a = []
+		a_gravity = cs.SX([0., 0., 0., 0., 0., 9.81])
+
+		for i in range(0, n_joints):
+			if i-1 is -1:
+				a_temp = (cs.mtimes(i_X_p[i], -a_gravity) + c[i])#6x1
+			else:
+				a_temp = (cs.mtimes(i_X_p[i], a[i-1]) + c[i])#6x1
+
+			if joint_list[i].type is "fixed":
+				a.append(a_temp)
+
+			else:
+				#q_ddot[i] = u[i] - (cs.mtimes(U[:6,i].T, a_temp)/d[i])
+				q_ddot[i] = u[i] - (cs.mtimes(U[i].T, a_temp)/d[i])
+				a.append(a_temp + cs.mtimes(joint_space[i], q_ddot[i]))#6x1
+
+		q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot])
+		return q_ddot
+
+
+
 
 	def get_forward_kinematics(self, root, tip):
 		"""Using one of the above to derive info needed for casadi fk"""
