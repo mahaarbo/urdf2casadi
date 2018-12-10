@@ -29,7 +29,7 @@ def motion_cross_product(v):
     cross_matrix = np.zeros([6, 6])
     skew1 = numpy_skew_symmetric(v[:3])
     skew2 = numpy_skew_symmetric(v[3:])
-    
+
     cross_matrix[:3, :3] = skew1
     cross_matrix[3:, 3:] = skew1
     cross_matrix[3:, :3] = skew2
@@ -40,7 +40,7 @@ def force_cross_product(v):
     return -motion_cross_product(v).T
 
 
-def spatial_inertia_matrix(ixx, ixy, ixz, iyy, iyz, izz, mass):
+def spatial_inertia_matrix_Ic(ixx, ixy, ixz, iyy, iyz, izz, mass):
     """Returns a spatial inertia matrix expressed at the center of mass """
     Ic = np.zeros([6, 6])
     Ic[:3, :3] = np.array([[ixx, ixy, ixz], [ixy, iyy, iyz], [ixz, iyz, izz]])
@@ -50,6 +50,22 @@ def spatial_inertia_matrix(ixx, ixy, ixz, iyy, iyz, izz, mass):
     Ic[5, 5] = mass
 
     return Ic
+
+def spatial_inertia_matrix_IO(ixx, ixy, ixz, iyy, iyz, izz, mass, pos):
+    """Returns a spatial inertia matrix expressed at the origin """
+    IO = np.zeros([6, 6])
+    pos_cross = numpy_skew_symmetric(pos)
+    inertia_matrix =np.array([[ixx, ixy, ixz], [ixy, iyy, iyz], [ixz, iyz, izz]])
+
+    IO[:3, :3] = inertia_matrix + mass*np.dot(pos_cross, np.transpose(pos_cross))
+    IO[:3, 3:] = mass*pos_cross
+    IO[3:, :3] = mass*np.transpose(pos_cross)
+
+    IO[3, 3] = mass
+    IO[4, 4] = mass
+    IO[5, 5] = mass
+
+    return IO
 
 def XL(xyz, rpy):
     """Returns a Plucker transformation matrix on X_L form"""

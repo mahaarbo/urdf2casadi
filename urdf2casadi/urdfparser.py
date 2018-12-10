@@ -1,13 +1,6 @@
 """This module contains a class for turning a chain in a URDF to a
 casadi function.
 """
-
-#ToDo:
-#1.Raise exeption for alle funcs
-#2.Bytte ut uintuitive navn
-#3.Lage flere pluckerfuncs, bl.a cross force & motion
-#4. Flere fd-algos?
-
 import casadi as cs
 import numpy as np
 from urdf_parser_py.urdf import URDF, Pose
@@ -16,8 +9,6 @@ from geometry import plucker
 from geometry import quaternion
 from geometry import dual_quaternion
 
-#Should we have more object variables so that these are common for whole object?
-
 class URDFparser(object):
 	"""Class that turns a chain from URDF to casadi functions"""
 	actuated_types = ["prismatic", "revolute", "continuous"]
@@ -25,7 +16,7 @@ class URDFparser(object):
 	def __init__(self):
 		self.robot_desc = None
 
-	#Load robot description from urdf methods
+
 	def from_file(self, filename):
 		"""Uses an URDF file to get robot description"""
 		print filename
@@ -42,9 +33,9 @@ class URDFparser(object):
 		self.robot_desc = URDF.from_xml_string(urdfstring)
 
 
-	#helper methods for other methods
-	def _get_joint_info(self, root, tip):
-		"""Using an URDF to extract a proper joint_list"""
+
+	def get_joint_info(self, root, tip):
+		"""Using an URDF to extract a proper joint_list, actuated names and upper and lower limits for joints"""
 		chain = self.robot_desc.get_chain(root, tip)
 		if self.robot_desc is None:
 			raise ValueError('Robot description not loaded from urdf')
@@ -53,7 +44,6 @@ class URDFparser(object):
 		upper = []
 		lower = []
 		actuated_names = []
-		chain = self.robot_desc.get_chain(root, tip)
 		for item in chain:
 			if item in self.robot_desc.joint_map:
 				joint = self.robot_desc.joint_map[item]
@@ -78,22 +68,49 @@ class URDFparser(object):
 
 		return joint_list, actuated_names, upper, lower
 
-	def _get_spatial_inertias(self, root, tip):
+	def _get_joint_list(self, root, tip):
+		"""Returns list of all joints, for further use in ID- and FD algorithms"""
+
 		chain = self.robot_desc.get_chain(root, tip)
-		#link_list = []
+		joint_list = []
+		for item in chain:
+			if item in self.robot_desc.joint_map:
+				joint = self.robot_desc.joint_map[item]
+				joint_list += [joint]
+				if joint.type in self.actuated_types:
+					if joint.axis is None:
+						joint.axis = [1., 0., 0.]
+					if joint.origin is None:
+						joint.origin = Pose(xyz=[0., 0., 0.],
+	                                        rpy=[0., 0., 0.])
+					elif joint.origin.xyz is None:
+						joint.origin.xyz = [0., 0., 0.]
+					elif joint.origin.rpy is None:
+						joint.origin.rpy = [0., 0., 0.]
+
+		return joint_list
+
+
+	def get_spatial_inertias(self, root, tip):
+		if self.robot_desc is None:
+			raise ValueError('Robot description not loaded from urdf')
+
+		chain = self.robot_desc.get_chain(root, tip)
 		spatial_inertias = []
-		n_bodies = 0
 
 		for item in chain:
+			#Assuming here that root is always a base link, is this a reasonable assumption?
+			#Could also just use spatial_inertias[i+1] in algorithm iterations
 			if item in self.robot_desc.link_map:
 				link = self.robot_desc.link_map[item]
-				n_bodies += 1
+				print link.name
 				if link.inertial is not None:
 					I = link.inertial.inertia
-					spatial_inertia = plucker.spatial_inertia_matrix(I.ixx, I.ixy, I.ixz, I.iyz, I.iyy, I.izz, link.inertial.mass)
+					spatial_inertia = plucker.spatial_inertia_matrix_IO(I.ixx, I.ixy, I.ixz, I.iyz, I.iyy, I.izz, link.inertial.mass, link.inertial.origin.xyz)
 					spatial_inertias.append(spatial_inertia)
 
-		return spatial_inertias, n_bodies
+		spatial_inertias.pop(0)
+		return spatial_inertias
 
 
 	def _get_spatial_transforms_and_joint_space(self, q, joint_list):
@@ -142,10 +159,10 @@ class URDFparser(object):
 
 
 
-
-	def _apply_external_forces(external_f, f):
+	def _apply_external_forces(external_f, f, i_X_0):
 		for i in range(0, len(f)):
-			f[i] += external_f[i]
+			#i_X_0[i] = inv(i_X_0.T)
+			f[i] -= cs.mtimes(i_X_0[i], external_f[i])
 		return f
 
 
@@ -154,27 +171,27 @@ class URDFparser(object):
 	def get_inverse_dynamics_RNEA(self, root, tip, f_ext = None):
 		"""Calculates and returns the casadi inverse dynamics, aka tau, using RNEA"""
 
-		joint_list, actuated_names, upper, lower = self._get_joint_info(root, tip)
+		if self.robot_desc is None:
+			raise ValueError('Robot description not loaded from urdf')
+
+		joint_list = self._get_joint_list(root, tip)
 		n_joints = len(joint_list)
 		q = cs.SX.sym("q", n_joints)
 		q_dot = cs.SX.sym("q_dot", n_joints)
 		q_ddot = cs.SX.sym("q_ddot", n_joints)
 		i_X_p, i_X_0, joint_space = self._get_spatial_transforms_and_joint_space(q, joint_list)
-		Ic, n_bodies = self._get_spatial_inertias(root, tip)
-
+		Ic = self.get_spatial_inertias(root, tip)
+		print "number of bodies:", len(Ic)
+		print "number of joints:", n_joints
 		v = []
 		a = []
 		#f = cs.SX.zeros(n_bodies-1)
 		f = []
-		tau = cs.SX.zeros(n_bodies-1)
-		print "n_bodies: ",n_bodies
-		print "n_joints: ",len(joint_list)
-		#print q
-
+		tau = cs.SX.zeros(n_joints)
 		v0 = cs.SX.zeros(6,1)
 		a_gravity = cs.SX([0., 0., 0., 0., 0., 9.81])
 
-		for i in range(0, n_bodies-1):
+		for i in range(0, n_joints):
 			if (joint_list[i].type == "fixed"):
 				if((i-1) is -1):
 					v.append(v0)
@@ -195,24 +212,25 @@ class URDFparser(object):
 			f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
 
 		if f_ext is not None:
-			f = self._apply_external_forces(f_ext, f)
+			f = self._apply_external_forces(f_ext, f, i_X_0)
 
-		for i in range((n_bodies-2), -1, -1):
+		for i in range((n_joints-1), -1, -1):
 			tau[i] = cs.mtimes(joint_space[i].T, f[i])
 			if (i-1) is not -1:
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
-
+		#must figure f out...
 		#for i in range(0, n_bodies-1):
 			#tau[i] = cs.Function("tau", [q, q_dot, q_ddot], [tau[i]])
 		#f = cs.Function("f", [q, q_dot, q_ddot], [f])
+
 		tau = cs.Function("tau", [q, q_dot, q_ddot], [tau])
-		return tau, f
+		return tau
 
 
 
-
-	def _get_jointpace_inertia_matrix(self, Ic, i_X_p, joint_space, n_bodies):
+	#make another one with only root ant tip as input
+	def _get_H(self, Ic, i_X_p, joint_space, n_bodies):
 			"""Returns the joint space inertia matrix aka the H-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
 			H = cs.SX.zeros(n_bodies-1, n_bodies-1)
 
@@ -230,17 +248,40 @@ class URDFparser(object):
 					H[j,i] = H[i,j]
 			return H
 
+	def get_jointpace_inertia_matrix(self, root, tip):
+			"""Returns the joint space inertia matrix aka the H-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
+			if self.robot_desc is None:
+				raise ValueError('Robot description not loaded from urdf')
+
+			Ic = self.get_spatial_inertias(root, tip)
+			n_bodies = len(Ic)
+			i_X_p, i_X_0, joint_space = self._get_spatial_transforms_and_joint_space(root, tip)
+			H = cs.SX.zeros(n_bodies-1, n_bodies-1)
+
+			for i in range(n_bodies-2, -1, -1):
+				Ic[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ic[i], i_X_p[i]))
+
+			for i in range(0, n_bodies-1):
+				fh = cs.mtimes(Ic[i], joint_space[i])
+				H[i, i] = cs.mtimes(joint_space[i].T, fh)
+				j = i
+				while (j-1) is not -1:
+					fh = cs.mtimes(i_X_p[j].T, fh)
+					j -= 1
+					H[i,j] = cs.mtimes(joint_space[j].T, fh)
+					H[j,i] = H[i,j]
+			return H
 
 
-
-	def _get_jointspace_bias_matrix(self, joint_list, i_X_p, joint_space, Ic, q, q_dot, n_bodies, f_ext = None):
+	#make another one with only root and tip as input
+	def _get_C(self, joint_list, i_X_p, joint_space, Ic, q, q_dot, n_bodies, f_ext = None):
 			"""Returns the joint space bias matrix aka the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
 			v = []
 			a = []
 			f = []
 			C = cs.SX.zeros(n_bodies-1)
 			v0 = cs.SX.zeros(6,1)
-			a_gravity = cs.SX([0., 0., 9.81, 0., 0., 0.])
+			a_gravity = cs.SX([0., 0., 0., 0., 0., 9.81])
 
 			for i in range(0, n_bodies-1):
 				if (joint_list[i].type == "fixed"):
@@ -263,9 +304,57 @@ class URDFparser(object):
 				f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
 
 			if f_ext is not None:
-				f = self._apply_external_forces(f_ext, f)
+				f = self._apply_external_forces(f_ext, f, i_X_0)
 
 			for i in range((n_bodies-2), -1, -1):
+				C[i] = cs.mtimes(joint_space[i].T, f[i])
+	    		#if (i-1) is not 0:
+	        		#f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
+			return C
+
+
+	def get_jointspace_bias_matrix(self, root, tip, f_ext = None):
+			"""Returns the joint space bias matrix aka the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
+			if self.robot_desc is None:
+				raise ValueError('Robot description not loaded from urdf')
+
+			joint_list = self._get_joint_list(root, tip)
+			n_joints = len(joint_list)
+			i_X_p, i_X_0, joint_space = self._get_spatial_transforms_and_joint_space(root, tip)
+			Ic = self.get_spatial_inertias(root, tip)
+			q = cs.SX.sym("q", n_joints)
+			q_dot = cs.SX.sym("q_dot", n_joints)
+			v = []
+			a = []
+			f = []
+			C = cs.SX.zeros(n_joints)
+			v0 = cs.SX.zeros(6,1)
+			a_gravity = cs.SX([0., 0., 0., 0., 0., 9.81])
+
+			for i in range(0, n_joints):
+				if (joint_list[i].type == "fixed"):
+					if((i-1) is -1):
+						v.append(v0)
+						a.append(cs.mtimes(i_X_p[i], -a_gravity))
+					else:
+						v.append(cs.mtimes(i_X_p[i], v[i-1]))
+						a.append(cs.mtimes(i_X_p[i], a[i-1]))
+				else:
+					vJ = cs.mtimes(joint_space[i],q_dot[i])
+
+					if((i-1) is -1):
+						v.append(vJ)
+						a.append(cs.mtimes(i_X_p[i], -a_gravity))
+					else:
+						v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
+						a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
+
+				f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
+
+			if f_ext is not None:
+				f = self._apply_external_forces(f_ext, f, i_X_0)
+
+			for i in range((n_joints-1), -1, -1):
 				C[i] = cs.mtimes(joint_space[i].T, f[i])
 	    		#if (i-1) is not 0:
 	        		#f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
@@ -276,17 +365,20 @@ class URDFparser(object):
 	def get_forward_dynamics_CRBA(self, root, tip, tau):
 			"""Returns the casadi forward dynamics using one of the inertia matrix method - composite rigid body algorithm"""
 
-			joint_list, actuated_names, upper, lower = self._get_joint_info(root, tip)
+			if self.robot_desc is None:
+				raise ValueError('Robot description not loaded from urdf')
+
+			joint_list = self._get_joint_list(root, tip)
 			n_joints = len(joint_list)
 			q = cs.SX.sym("q", n_joints)
 			q_dot = cs.SX.sym("q_dot", n_joints)
 			q_ddot = cs.SX.zeros(n_joints)
 			i_X_p, i_X_0, joint_space = self._get_spatial_transforms_and_joint_space(q, joint_list)
-			Ic, n_bodies = self._get_spatial_inertias(root, tip)
+			Ic = self.get_spatial_inertias(root, tip)
 
-			H = self._get_jointpace_inertia_matrix(Ic, i_X_p, joint_space, n_bodies)
+			H = self._get_H(Ic, i_X_p, joint_space, n_joints)
 			H_inv = cs.solve(H, cs.SX.eye(H.size1()))
-			C = self._get_jointspace_bias_matrix(joint_list, i_X_p, joint_space, Ic, q, q_dot, n_bodies)
+			C = self._get_C(joint_list, i_X_p, joint_space, Ic, q, q_dot, n_joints)
 
 			q_ddot = cs.mtimes(H_inv, (tau - C))
 			q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot])
@@ -298,22 +390,25 @@ class URDFparser(object):
 	def get_forward_dynamics_ABA(self, root, tip, tau, f_ext = None):
 		"""Returns the casadi forward dynamics using the inertia articulated rigid body algorithm"""
 
-		joint_list, actuated_names, upper, lower = self._get_joint_info(root, tip)
+		if self.robot_desc is None:
+			raise ValueError('Robot description not loaded from urdf')
+
+		joint_list = self._get_joint_list(root, tip)
 		n_joints = len(joint_list)
 		q = cs.SX.sym("q", n_joints)
 		q_dot = cs.SX.sym("q_dot", n_joints)
 		q_ddot = cs.SX.zeros(n_joints)
 		i_X_p, i_X_0, joint_space = self._get_spatial_transforms_and_joint_space(q, joint_list)
-		Ic, n_bodies = self._get_spatial_inertias(root, tip)
+		Ic = self.get_spatial_inertias(root, tip)
 
 		v = []
 		c = []
 		pA = []
 
-		#Er en av måtene å deklarere bedre på?
+		#Which is better if any?
 		#U = cs.SX.zeros(6, n_joints)
 		#d = cs.SX.zeros(1, n_joints)
-		u = cs.SX.zeros(1, n_bodies-1)
+		u = cs.SX.zeros(1, n_joints)
 		U = [None]*n_joints
 		d = [None]*n_joints
 		zeros = cs.SX.zeros(6)
@@ -341,7 +436,7 @@ class URDFparser(object):
 		if f_ext is not None:
 			pA = self._apply_external_forces(f_ext, pa)
 
-		for i in range(n_bodies-2, -1, -1):
+		for i in range(n_joints-1, -1, -1):
 			#U[:6,i] = cs.mtimes(Ic[i], joint_space[i])#6x6 * 6x1 = 6x1
 			U[i] = cs.mtimes(Ic[i], joint_space[i])#6x6 * 6x1 = 6x1
 			#d[i] = cs.mtimes(joint_space[i].T, U[:6,i])#1x6 x 6x1 = 1x1
