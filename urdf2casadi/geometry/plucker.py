@@ -43,7 +43,7 @@ def force_cross_product(v):
 def spatial_inertia_matrix_Ic(ixx, ixy, ixz, iyy, iyz, izz, mass):
     """Returns a spatial inertia matrix expressed at the center of mass """
     Ic = np.zeros([6, 6])
-    Ic[:3, :3] = np.array([[ixx, ixy, ixz], [ixy, iyy, iyz], [ixz, iyz, izz]])
+    Ic[:3, :3] = np.array([[ixx, -ixy, -ixz], [-ixy, iyy, -iyz], [-ixz, -iyz, izz]])
 
     Ic[3, 3] = mass
     Ic[4, 4] = mass
@@ -55,7 +55,7 @@ def spatial_inertia_matrix_IO(ixx, ixy, ixz, iyy, iyz, izz, mass, pos):
     """Returns a spatial inertia matrix expressed at the origin """
     IO = np.zeros([6, 6])
     pos_cross = numpy_skew_symmetric(pos)
-    inertia_matrix =np.array([[ixx, ixy, ixz], [ixy, iyy, iyz], [ixz, iyz, izz]])
+    inertia_matrix =np.array([[ixx, -ixy, -ixz], [-ixy, iyy, -iyz], [-ixz, -iyz, izz]])
 
     IO[:3, :3] = inertia_matrix + mass*np.dot(pos_cross, np.transpose(pos_cross))
     IO[:3, 3:] = mass*pos_cross
@@ -67,99 +67,152 @@ def spatial_inertia_matrix_IO(ixx, ixy, ixz, iyy, iyz, izz, mass, pos):
 
     return IO
 
-def XL(xyz, rpy):
-    """Returns a Plucker transformation matrix on X_L form"""
+def XT(xyz, rpy):
+    """Returns a spatial transformation matrix on X_L form"""
     X = np.zeros([6, 6])
 
-    #should i not use numpy this way for calculation?
     rotation_matrix = numpy_rotation_rpy(rpy[0], rpy[1], rpy[2])
 
     X[:3, :3] = rotation_matrix
     X[3:, 3:] = rotation_matrix
+    X[3:, :3] = -cs.mtimes(rotation_matrix, numpy_skew_symmetric(xyz))
 
-    X[3, 0] = -xyz[2]*rotation_matrix[1, 0] + xyz[1]*rotation_matrix[2, 0]
-    X[3, 1] = -xyz[2]*rotation_matrix[1, 1] + xyz[1]*rotation_matrix[2, 1]
-    X[3, 2] = -xyz[2]*rotation_matrix[1, 2] + xyz[1]*rotation_matrix[2, 2]
+    #X[3, 0] = -xyz[2]*rotation_matrix[1, 0] + xyz[1]*rotation_matrix[2, 0]
+    #X[3, 1] = -xyz[2]*rotation_matrix[1, 1] + xyz[1]*rotation_matrix[2, 1]
+    #X[3, 2] = -xyz[2]*rotation_matrix[1, 2] + xyz[1]*rotation_matrix[2, 2]
 
-    X[4, 0] = xyz[2]*rotation_matrix[0, 0] - xyz[0]*rotation_matrix[2, 0]
-    X[4, 1] = xyz[2]*rotation_matrix[0, 1] - xyz[0]*rotation_matrix[2, 1]
-    X[4, 2] = xyz[2]*rotation_matrix[0, 2] - xyz[0]*rotation_matrix[2, 2]
+    #X[4, 0] = xyz[2]*rotation_matrix[0, 0] - xyz[0]*rotation_matrix[2, 0]
+    #X[4, 1] = xyz[2]*rotation_matrix[0, 1] - xyz[0]*rotation_matrix[2, 1]
+    #X[4, 2] = xyz[2]*rotation_matrix[0, 2] - xyz[0]*rotation_matrix[2, 2]
 
-    X[5, 0] = -xyz[1]*rotation_matrix[0, 0] + xyz[0]*rotation_matrix[1, 0]
-    X[5, 1] = -xyz[1]*rotation_matrix[0, 1] + xyz[0]*rotation_matrix[1, 1]
-    X[5, 2] = -xyz[1]*rotation_matrix[0, 2] + xyz[0]*rotation_matrix[1, 2]
+    #X[5, 0] = -xyz[1]*rotation_matrix[0, 0] + xyz[0]*rotation_matrix[1, 0]
+    #X[5, 1] = -xyz[1]*rotation_matrix[0, 1] + xyz[0]*rotation_matrix[1, 1]
+    #X[5, 2] = -xyz[1]*rotation_matrix[0, 2] + xyz[0]*rotation_matrix[1, 2]
     return X
 
-def XJ_prismatic(xyz, rpy, axis, qi):
-    """Returns a symbolic Plucker transformation matrix for prismatic joint"""
+def XJ_prismatic2(axis, qi):
+    """Returns a symbolic spatial translation transformation matrix for prismatic joint"""
     X = cs.SX.zeros(6, 6)
 
     # Origin rotation from RPY ZYX convention
-    cr = cs.cos(rpy[0])
-    sr = cs.sin(rpy[0])
-    cp = cs.cos(rpy[1])
-    sp = cs.sin(rpy[1])
-    cy = cs.cos(rpy[2])
-    sy = cs.sin(rpy[2])
-    r00 = cy*cp
-    r01 = cy*sp*sr - sy*cr
-    r02 = cy*sp*cr + sy*sr
-    r10 = sy*cp
-    r11 = sy*sp*sr + cy*cr
-    r12 = sy*sp*cr - cy*sr
-    r20 = -sp
-    r21 = cp*sr
-    r22 = cp*cr
+    #cr = cs.cos(rpy[0])
+    #sr = cs.sin(rpy[0])
+    #cp = cs.cos(rpy[1])
+    #sp = cs.sin(rpy[1])
+    #cy = cs.cos(rpy[2])
+    #sy = cs.sin(rpy[2])
+    #r00 = cy*cp
+    #r01 = cy*sp*sr - sy*cr
+    #r02 = cy*sp*cr + sy*sr
+    #r10 = sy*cp
+    #r11 = sy*sp*sr + cy*cr
+    #r12 = sy*sp*cr - cy*sr
+    #r20 = -sp
+    #r21 = cp*sr
+    #r22 = cp*cr
 
-    #are these position variables correct in plucker?
-    p0 = r00*axis[0]*qi + r01*axis[1]*qi + r02*axis[2]*qi
-    p1 = r10*axis[0]*qi + r11*axis[1]*qi + r12*axis[2]*qi
-    p2 = r20*axis[0]*qi + r21*axis[1]*qi + r22*axis[2]*qi
+    #p0 = r00*axis[0]*qi + r01*axis[1]*qi + r02*axis[2]*qi
+    #p1 = r10*axis[0]*qi + r11*axis[1]*qi + r12*axis[2]*qi
+    #p2 = r20*axis[0]*qi + r21*axis[1]*qi + r22*axis[2]*qi
 
-    sr00 = -p2*r10 + p1*r20
-    sr01 = -p2*r11 + p1*r21
-    sr02 = -p2*r12 + p1*r22
-    sr10 = p2*r00 - p0*r20
-    sr11 = p2*r01 - p0*r21
-    sr12 = p2*r02 - p0*r22
-    sr20 = -p1*r00 + p0*r10
-    sr21 = -p1*r01 + p0*r11
-    sr22 = -p1*r02 + p0*r12
+    #sr00 = -p2*r10 + p1*r20
+    #sr01 = -p2*r11 + p1*r21
+    #sr02 = -p2*r12 + p1*r22
+    #sr10 = p2*r00 - p0*r20
+    #sr11 = p2*r01 - p0*r21
+    #sr12 = p2*r02 - p0*r22
+    #sr20 = -p1*r00 + p0*r10
+    #sr21 = -p1*r01 + p0*r11
+    #sr22 = -p1*r02 + p0*r12
 
-    # Plucker transformation matrix
-    X[0, 0] = r00
-    X[0, 1] = r01
-    X[0, 2] = r02
-    X[1, 0] = r10
-    X[1, 1] = r11
-    X[1, 2] = r12
-    X[2, 0] = r20
-    X[2, 1] = r21
-    X[2, 2] = r22
+    # spatial transformation matrix
+    X[0, 0] = 1
+    #X[0, 1] = r01
+    #X[0, 2] = r02
+    #X[1, 0] = r10
+    X[1, 1] = 1
+    #[1, 2] = r12
+    #[2, 0] = r20
+    #[2, 1] = r21
+    X[2, 2] = 1
 
-    X[3, 0] = sr00
-    X[3, 1] = sr01
-    X[3, 2] = sr02
-    X[4, 0] = sr10
-    X[4, 1] = sr11
-    X[4, 2] = sr12
-    X[5, 0] = sr20
-    X[5, 1] = sr21
-    X[5, 2] = sr22
+    #X[3, 0] = sr00
+    X[3, 1] = axis[2]*qi
+    X[3, 2] = -axis[1]*qi
+    X[4, 0] = -axis[2]*qi
+    #X[4, 1] = sr11
+    X[4, 2] = axis[0]*qi
+    X[5, 0] = axis[1]*qi
+    X[5, 1] = -axis[0]*qi
+    #X[5, 2] = sr22
 
-    X[3, 3] = r00
-    X[3, 4] = r01
-    X[3, 5] = r02
-    X[4, 3] = r11
-    X[4, 4] = r12
-    X[4, 5] = r13
-    X[5, 3] = r20
-    X[5, 4] = r21
-    X[5, 5] = r22
+    X[3, 3] = 1
+    #X[3, 4] = r01
+    #X[3, 5] = r02
+    #X[4, 3] = r11
+    X[4, 4] = 1
+    #X[4, 5] = r13
+    #X[5, 3] = r20
+    #X[5, 4] = r21
+    X[5, 5] = 1
+    return X
+
+def XJ_prismatic(axis, qi):
+        """Returns a symbolic spatial translation transformation matrix for prismatic joint"""
+        X = cs.SX.zeros(6, 6)
+
+        X[0, 0] = 1
+        X[1, 1] = 1
+        X[2, 2] = 1
+
+        X[3, 1] = axis[2]*qi
+        X[3, 2] = -axis[1]*qi
+        X[4, 0] = -axis[2]*qi
+        X[4, 2] = axis[0]*qi
+        X[5, 0] = axis[1]*qi
+        X[5, 1] = -axis[0]*qi
+
+        X[3, 3] = 1
+        X[4, 4] = 1
+        X[5, 5] = 1
+
+        return X
+
+def XJ_revolute(axis, qi):
+    """Returns a symbolic spatial rotation transformation matrix for a revolute joint"""
+    X = cs.SX.zeros(6, 6)
+    R = cs.SX.zeros(3, 3)
+    s = cs.sin(qi)
+    c = cs.cos(qi)
+
+    if axis[0] == 1:
+        R[0, 0] = 1
+        R[1, 1] = c
+        R[2, 2] = c
+        R[1, 2] = s
+        R[2, 1] = -s
+
+    elif axis[1] == 1:
+        R[0, 0] = c
+        R[0, 2] = -s
+        R[1, 1] = 1
+        R[2, 0] = s
+        R[2, 2] = c
+
+    else:
+        R[0, 0] = c
+        R[0, 1] = s
+        R[1, 0] = -s
+        R[1, 1] = c
+        R[2, 2] = 1
+
+    X[:3, :3] = R
+    X[3:, 3:] = R
     return X
 
 
-def XJ_revolute(xyz, rpy, axis, qi):
+
+def XJ_revolute2(xyz, rpy, axis, qi):
     X = cs.SX.zeros(6, 6)
 
     # Origin rotation from RPY ZYX convention
