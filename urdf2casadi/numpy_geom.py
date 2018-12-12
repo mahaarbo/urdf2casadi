@@ -71,7 +71,6 @@ def quaternion_product(quat0, quat1):
     quat[3] = w0*w1 - x0*x1 - y0*y1 - z0*z1
     return quat
 
-
 def dual_quaternion_product(Q, P):
     """Returns the dual quaternion product of two 8 element vectors
     representing a dual quaternions. First four elements are the real
