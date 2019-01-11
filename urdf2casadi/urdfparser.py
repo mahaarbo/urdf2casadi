@@ -181,15 +181,23 @@ class URDFparser(object):
 		q_ddot = cs.SX.sym("q_ddot", n_joints)
 		i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
 		Ic = self.get_spatial_inertias(root, tip)
+
+		print  "\n"
+		print "spatial inertias:", Ic
+		print  "\n"
+		print "spatial transforms:", i_X_p
+		print  "\n"
 		print "number of bodies:", len(Ic)
+		print  "\n"
 		print "number of joints:", n_joints
+		print  "\n"
 		v = []
 		a = []
 		#f = cs.SX.zeros(n_bodies-1)
 		f = []
 		tau = cs.SX.zeros(n_joints)
 		v0 = cs.SX.zeros(6,1)
-		a_gravity = cs.SX([0., 0., 0., 0., -9.81, 0.])
+		a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
 		for i in range(0, n_joints):
 
@@ -210,14 +218,29 @@ class URDFparser(object):
 				else:
 					v.append(cs.mtimes(i_X_p[i], v[i-1]) + Si[i]*q_dot[i])
 					a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(Si[i],q_ddot[i]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
+					print "\n X times a(i-1):", cs.mtimes(i_X_p[i], a[i-1]), "\n", "\n"
+					print "S times q_ddot(i):", cs.mtimes(Si[i],q_ddot[i]) , "\n", "\n"
+					print "motion cross product(v(i)) times vJ(= S times q_dot):", cs.mtimes(plucker.motion_cross_product(v[i]),vJ), "\n", "\n"
+					print "\n motion cross product(v[i]):", plucker.motion_cross_product(v[i]), "\n"
+					print "\n vJ:", vJ, "\n"
+			print
+			print  "\n"
+			print "v", i, ":", v[i]
+			print  "\n"
+			print "a", i, ":", a[i]
+			print  "\n"
 
 			f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
+			print "f", i, ":", f[i]
 
 		if f_ext is not None:
 			f = self._apply_external_forces(f_ext, f, i_X_0)
 
 		for i in range((n_joints-1), -1, -1):
 			tau[i] = cs.mtimes(Si[i].T, f[i])
+			print  "\n"
+			print "tau", i, ":", tau[i]
+			print  "\n"
 			if (i-1) is not -1:
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
@@ -290,7 +313,7 @@ class URDFparser(object):
 			f = []
 			C = cs.SX.zeros(n_joints)
 			v0 = cs.SX.zeros(6,1)
-			a_gravity = cs.SX([0., 0., 0., 0., 0., 9.81])
+			a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
 			for i in range(0, n_joints-1):
 				if (joint_list[i].type == "fixed"):
@@ -345,7 +368,7 @@ class URDFparser(object):
 			f = []
 			C = cs.SX.zeros(n_joints)
 			v0 = cs.SX.zeros(6,1)
-			a_gravity = cs.SX([0., 0., 0., 0., -9.81, 0.])
+			a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
 			for i in range(0, n_joints):
 				if (joint_list[i].type == "fixed"):
@@ -395,10 +418,16 @@ class URDFparser(object):
 			Ic = self.get_spatial_inertias(root, tip)
 
 			H = self._get_H(Ic, i_X_p, Si, n_joints)
+			print "H:", H, "\n"
+			print  "\n"
 			H_inv = cs.solve(H, cs.SX.eye(H.size1()))
+			print "H_inv:", H_inv, "\n"
+			print  "\n"
 			C = self._get_C(joint_list, i_X_p, Si, Ic, q, q_dot, n_joints)
-
+			print "C:", C, "\n"
+			print  "\n"
 			q_ddot = cs.mtimes(H_inv, (tau - C))
+			print "q_ddot:", q_ddot, "\n"
 
 
 			q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot])
