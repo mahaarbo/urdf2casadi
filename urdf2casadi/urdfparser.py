@@ -236,7 +236,7 @@ class URDFparser(object):
 		if f_ext is not None:
 			f = self._apply_external_forces(f_ext, f, i_X_0)
 
-		for i in range((n_joints-1), -1, -1):
+		for i in range(n_joints-1, -1, -1):
 			tau[i] = cs.mtimes(Si[i].T, f[i])
 			print  "\n"
 			print "tau", i, ":", tau[i]
@@ -262,62 +262,116 @@ class URDFparser(object):
 			#for i in range(0, n_joints-1):
 				#Ic[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ic[i], i_X_p[i]))
 
-			for i in range(n_joints-2, -1, -1):
-				if i is not 0:
-					Ic[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ic[i], i_X_p[i]))
-				F = cs.mtimes(Ic[i], Si[i])
-				H[i, i] = cs.mtimes(Si[i].T, F)
+			print "S:", Si
+			print " "
+			print "iXp:", i_X_p
+			print " "
+			print "Ic:", Ic
+
+			for i in range(n_joints-1, -1, -1):
+				print "Ic i:", i
+				Ic[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ic[i], i_X_p[i]))
+
+
+			for i in range(n_joints-1, -1, -1):
+				print Ic
+				print " "
+				print "i:", i
+				fh = cs.mtimes(Ic[i], Si[i])
+				print "fh_i:", fh
+				print " "
+				H[i, i] = cs.mtimes(Si[i].T, fh)
+				print "H", i, i, ":", H[i,i]
+				print " "
 				j = i
-				while j is not 0:
-					F = cs.mtimes(i_X_p[j].T, F)
+				while (j) is not 0:
+					fh = cs.mtimes(i_X_p[j].T, fh)
+					print "fh_j:", fh
 					j -= 1
-					H[i,j] = cs.mtimes(F.T, Si[j])
+					H[i,j] = cs.mtimes(Si[j].T, fh)
 					H[j,i] = H[i,j]
+					print "H[", i, ",", j, "] = ", H[i,j]
+
+
+			#for i in range(n_joints-1, -1, -1):
+			#	if i is not 0:
+			#		Ic[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ic[i], i_X_p[i]))
+			#	F = cs.mtimes(Ic[i], Si[i])
+			#	H[i, i] = cs.mtimes(Si[i].T, F)
+			#	j = i
+			#	while j is not 0:
+			#		F = cs.mtimes(i_X_p[j].T, F)
+			#		j -= 1
+			#		H[i,j] = cs.mtimes(F.T, Si[j])
+			#		H[j,i] = H[i,j]
 
 			return H
 
-	def get_jointpace_inertia_matrix(self, root, tip):
+	def get_jointspace_inertia_matrix(self, root, tip):
 			"""Returns the joint space inertia matrix aka the H-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
 			if self.robot_desc is None:
 				raise ValueError('Robot description not loaded from urdf')
 
 
-			joint_list = _get_joint_list(root, tip)
+			joint_list = self._get_joint_list(root, tip)
 			Ic = self.get_spatial_inertias(root, tip)
 			n_bodies = len(Ic)
+			q = cs.SX.zeros(n_bodies)
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
 			H = cs.SX.zeros(n_bodies, n_bodies)
 
-			for i in range(n_bodies-2, -1, -1):
+			print "S:", Si
+			print " "
+			print "iXp:", i_X_p
+			print " "
+			print "Ic:", Ic
+
+			for i in range(n_bodies-1, -1, -1):
+				print "Ic i:", i
 				Ic[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ic[i], i_X_p[i]))
 
-			for i in range(0, n_bodies-1):
+
+			for i in range(0, n_bodies):
+				print Ic
+				print " "
+				print "i:", i
 				fh = cs.mtimes(Ic[i], Si[i])
+				print "fh_i:", fh
+				print " "
 				H[i, i] = cs.mtimes(Si[i].T, fh)
+				print "H", i, i, ":", H[i,i]
+				print " "
 				j = i
 				while (j-1) is not -1:
+					print "in while"
 					fh = cs.mtimes(i_X_p[j].T, fh)
+					print "fh_j:", fh
 					j -= 1
 					H[i,j] = cs.mtimes(Si[j].T, fh)
 					H[j,i] = H[i,j]
+					print "H[", i, ",", j, "] = ", H[i,j]
 
-			H = cs.Function("H", [q], [H])
+			#H = cs.Function("H", [q], [H])
 			return H
 
 
 	#make another one with only root and tip as input
 	def _get_C(self, joint_list, i_X_p, Si, Ic, q, q_dot, n_joints, f_ext = None):
 			"""Returns the joint space bias matrix aka the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
+
 			v = []
 			a = []
+			#f = cs.SX.zeros(n_bodies-1)
 			f = []
 			C = cs.SX.zeros(n_joints)
 			v0 = cs.SX.zeros(6,1)
 			a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
-			for i in range(0, n_joints-1):
+			for i in range(0, n_joints):
+
+				#OBS! Boor legge denne i jcalc slik at RNEA ikke er avhengig av jointtype
 				if (joint_list[i].type == "fixed"):
-					if((i-1) is -1):
+					if(i is 0):
 						v.append(v0)
 						a.append(cs.mtimes(i_X_p[i], -a_gravity))
 					else:
@@ -326,22 +380,39 @@ class URDFparser(object):
 				else:
 					vJ = cs.mtimes(Si[i],q_dot[i])
 
-					if((i-1) is -1):
+					if(i is 0):
 						v.append(vJ)
-						a.append(cs.mtimes(i_X_p[i], -a_gravity))
+						a.append(cs.mtimes(i_X_p[i], a_gravity) + vJ)
 					else:
-						v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
+						v.append(cs.mtimes(i_X_p[i], v[i-1]) + Si[i]*q_dot[i])
 						a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
+						print "\n X times a(i-1):", cs.mtimes(i_X_p[i], a[i-1]), "\n", "\n"
 
-				f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
+						#print "motion cross product(v(i)) times vJ(= S times q_dot):", cs.mtimes(plucker.motion_cross_product(v[i]),vJ), "\n", "\n"
+						#print "\n motion cross product(v[i]):", plucker.motion_cross_product(v[i]), "\n"
+						#print "\n vJ:", vJ, "\n"
+
+
+				f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
+
 
 			if f_ext is not None:
 				f = self._apply_external_forces(f_ext, f, i_X_0)
 
-			for i in range((n_joints-2), -1, -1):
+			for i in range(n_joints-1, -1, -1):
 				C[i] = cs.mtimes(Si[i].T, f[i])
-	    		#if (i-1) is not 0:
-	        		#f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
+
+				if (i-1) is not -1:
+					f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
+
+
+			C2 = cs.Function("C", [q, q_dot], [C])
+
+			C_num = C2([0.1,0.1],[0.1,0.1])
+			print "C 0.1:", C_num
+
+			C_num2 = C2([5.,5.],[5.,5.])
+			print "C 5:", C_num2
 			return C
 
 
@@ -351,28 +422,28 @@ class URDFparser(object):
 				raise ValueError('Robot description not loaded from urdf')
 
 
-
 			joint_list = self._get_joint_list(root, tip)
 			n_joints = len(joint_list)
 			q = cs.SX.sym("q", n_joints)
 			q_dot = cs.SX.sym("q_dot", n_joints)
+
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
 			Ic = self.get_spatial_inertias(root, tip)
 
-			for i in range(0, n_joints):
-				print Si[i]
-				print i_X_p[i]
 
 			v = []
 			a = []
+			#f = cs.SX.zeros(n_bodies-1)
 			f = []
-			C = cs.SX.zeros(n_joints)
+			tau = cs.SX.zeros(n_joints)
 			v0 = cs.SX.zeros(6,1)
 			a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
 			for i in range(0, n_joints):
+
+				#OBS! Boor legge denne i jcalc slik at RNEA ikke er avhengig av jointtype
 				if (joint_list[i].type == "fixed"):
-					if((i-1) is -1):
+					if(i is 0):
 						v.append(v0)
 						a.append(cs.mtimes(i_X_p[i], -a_gravity))
 					else:
@@ -381,24 +452,33 @@ class URDFparser(object):
 				else:
 					vJ = cs.mtimes(Si[i],q_dot[i])
 
-					if((i-1) is -1):
+					if(i is 0):
 						v.append(vJ)
-						a.append(cs.mtimes(i_X_p[i], a_gravity))
+						a.append(cs.mtimes(i_X_p[i], a_gravity) + vJ)
 					else:
-						v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
+						v.append(cs.mtimes(i_X_p[i], v[i-1]) + Si[i]*q_dot[i])
 						a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
+						#print "\n X times a(i-1):", cs.mtimes(i_X_p[i], a[i-1]), "\n", "\n"
 
-				f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
+						#print "motion cross product(v(i)) times vJ(= S times q_dot):", cs.mtimes(plucker.motion_cross_product(v[i]),vJ), "\n", "\n"
+						#print "\n motion cross product(v[i]):", plucker.motion_cross_product(v[i]), "\n"
+						#print "\n vJ:", vJ, "\n"
+
+
+				f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
+
 
 			if f_ext is not None:
 				f = self._apply_external_forces(f_ext, f, i_X_0)
 
-			for i in range((n_joints-1), -1, -1):
-				C[i] = cs.mtimes(Si[i].T, f[i])
-	    		#if (i-1) is not 0:
-	        		#f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i
+			for i in range(n_joints-1, -1, -1):
+				tau[i] = cs.mtimes(Si[i].T, f[i])
 
-			C = cs.Function("C", [q, q_dot], [C])
+				if (i-1) is not -1:
+					f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
+
+
+			C = cs.Function("C", [q, q_dot], [tau])
 			return C
 
 
@@ -416,16 +496,22 @@ class URDFparser(object):
 			q_ddot = cs.SX.zeros(n_joints)
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
 			Ic = self.get_spatial_inertias(root, tip)
+			print "S:", Si
+			print " "
+			print "iXp:", i_X_p
+			print " "
+			print "Ic:", Ic
+
 
 			H = self._get_H(Ic, i_X_p, Si, n_joints)
 			print "H:", H, "\n"
-			print  "\n"
+			#print  "\n"
 			H_inv = cs.solve(H, cs.SX.eye(H.size1()))
 			print "H_inv:", H_inv, "\n"
-			print  "\n"
+			#print  "\n"
 			C = self._get_C(joint_list, i_X_p, Si, Ic, q, q_dot, n_joints)
 			print "C:", C, "\n"
-			print  "\n"
+			#print  "\n"
 			q_ddot = cs.mtimes(H_inv, (tau - C))
 			print "q_ddot:", q_ddot, "\n"
 
