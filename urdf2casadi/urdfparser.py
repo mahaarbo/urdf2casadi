@@ -103,7 +103,7 @@ class URDFparser(object):
 			#Could also just use spatial_inertias[i+1] in algorithm iterations
 			if item in self.robot_desc.link_map:
 				link = self.robot_desc.link_map[item]
-				print link.name
+				#print link.name
 				if link.inertial is not None:
 					I = link.inertial.inertia
 					spatial_inertia = plucker.spatial_inertia_matrix_IO(I.ixx, I.ixy, I.ixz, I.iyy, I.iyz, I.izz, link.inertial.mass, link.inertial.origin.xyz)
@@ -267,8 +267,8 @@ class URDFparser(object):
 			for i in range(n_joints-1, -1, -1):
 				Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
 
-			print "Ic_composite 0:", Ic_composite[0], "\n"
-			print "Ic_composite 1:", Ic_composite[1], "\n"
+			#print "Ic_composite 0:", Ic_composite[0], "\n"
+			#print "Ic_composite 1:", Ic_composite[1], "\n"
 
 			for i in range(n_joints-1, -1, -1):
 				#print Ic
@@ -333,8 +333,8 @@ class URDFparser(object):
 				Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
 
 
-			print "Ic_composite 0:", Ic[0], "\n"
-			print "Ic_composite 1:", Ic[1], "\n"
+			#print "Ic_composite 0:", Ic[0], "\n"
+			#print "Ic_composite 1:", Ic[1], "\n"
 
 			for i in range(0, n_bodies):
 				fh = cs.mtimes(Ic_composite[i], Si[i])
@@ -353,10 +353,21 @@ class URDFparser(object):
 	#make another one with only root and tip as input
 	def _get_C(self, joint_list, i_X_p, Si, Ic, q, q_dot, n_joints, f_ext = None):
 			"""Returns the joint space bias matrix aka the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
+			#print "v", i, ":", v[i], "\n"
+			#print "a", i, ":", a[i], "\n"
+			#print "f", i, ":", f[i], "\n"
+			#joint_list = self._get_joint_list(root, tip)
+			#n_joints = len(joint_list)
+			#q = cs.SX.sym("q", n_joints)
+			#q_dot = cs.SX.sym("q_dot", n_joints)
+
+			#i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
+			#Ic = self.get_spatial_inertias(root, tip)
+
 
 			v = []
 			a = []
-			#f = cs.SX.zeros(n_bodies)
+			#f = cs.SX.zeros(n_bodies-1)
 			f = []
 			C = cs.SX.zeros(n_joints)
 			v0 = cs.SX.zeros(6,1)
@@ -364,7 +375,7 @@ class URDFparser(object):
 
 			for i in range(0, n_joints):
 
-				#OBS! Boor legge denne i jcalc slik at RNEA ikke er avhengig av jointtype
+				#OBS! Boor legge denne i jcalc slik at denne ikke er avhengig av jointtype
 				if (joint_list[i].type == "fixed"):
 					if(i is 0):
 						v.append(v0)
@@ -383,29 +394,27 @@ class URDFparser(object):
 						a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
 
 
-
 				f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
-				#print "v", i, ":", v[i], "\n"
-				#print "a", i, ":", a[i], "\n"
-				#print "f", i, ":", f[i], "\n"
+
 
 			if f_ext is not None:
 				f = self._apply_external_forces(f_ext, f, i_X_0)
 
 			for i in range(n_joints-1, -1, -1):
-				#C[i] = cs.mtimes(Si[i].T, f[i])
-				print "C", i, ":", C[i], "\n"
+				C[i] = cs.mtimes(Si[i].T, f[i])
+
 				if (i-1) is not -1:
 					f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
-
+			# For numerical verification:
 			C2 = cs.Function("C", [q, q_dot], [C])
 
-			C_num = C2([0.1,0.1],[0.1,0.1])
-			print "C 0.1:", C_num
+			C_num0 = C2([0.1, 0.1], [0.1, 0.1])
+			print "numerical tau with zeros as input:", (C_num0)
 
-			C_num2 = C2([5.,5.],[5.,5.])
-			print "C 5:", C_num2
+			C_num5 = C2([5., 5.], [5., 5.])
+			print "numerical tau with fives as input:", (C_num5)
+
 			return C
 
 
@@ -523,6 +532,7 @@ class URDFparser(object):
 		v = []
 		c = []
 		pA = []
+		IA = []
 
 		#Which is better if any?
 		#U = cs.SX.zeros(6, n_joints)
@@ -543,33 +553,33 @@ class URDFparser(object):
 
 			else:
 				vJ = cs.mtimes(Si[i], q_dot[i])
-				if i-1 is -1:
+				if i is 0:
 					v.append(vJ)
 					c.append(cs.SX.zeros(6))
 				else:
 					v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
 					c.append(cs.mtimes(plucker.motion_cross_product(v[i]), vJ))
 
+			IA.append(Ic[i])
 			pA.append(cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))
 
 		if f_ext is not None:
-			pA = self._apply_external_forces(f_ext, pa)
+			pA = self._apply_external_forces(f_ext, pA)
 
 		for i in range(n_joints-1, -1, -1):
 			#U[:6,i] = cs.mtimes(Ic[i], Si[i])#6x6 * 6x1 = 6x1
-			U[i] = cs.mtimes(Ic[i], Si[i])#6x6 * 6x1 = 6x1
+			U[i] = cs.mtimes(IA[i], Si[i])#6x6 * 6x1 = 6x1
 			#d[i] = cs.mtimes(Si[i].T, U[:6,i])#1x6 x 6x1 = 1x1
 			d[i] = cs.mtimes(Si[i].T, U[i])
 			u[i] = tau[i] - cs.mtimes(Si[i].T, pA[i]) # 1x1 - 1x6 x 6x1 = 1x1
-			if i-1 is not -1:
-
-				Ia = Ic[i] - (cs.mtimes(U[i], U[i].T)/d[i])
+			if i is not 0:
+				Ia = IA[i] - (cs.mtimes(U[i], U[i].T)/d[i])#blir dette ekvivalent med U/d*U.T?
 				pa = pA[i] + cs.mtimes(Ic[i], c[i]) + cs.mtimes(U[i], u[i]/d[i])
-				Ic[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ia, i_X_p[i]))
+				IA[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ia, i_X_p[i]))
 				pA[i-1] += cs.mtimes(i_X_p[i].T, pa)
 
 		a = []
-		a_gravity = cs.SX([0., 0., 0., 0., -9.81, 0.])
+		a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
 		for i in range(0, n_joints):
 			if i is 0:
