@@ -234,7 +234,7 @@ class URDFparser(object):
 		for i in range(n_joints-1, -1, -1):
 			tau[i] = cs.mtimes(Si[i].T, f[i])
 			#print "tau", i, ":", tau[i], "\n"
-			if (i-1) is not -1:
+			if i is not 0:
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
 		#must figure f out...
@@ -340,7 +340,7 @@ class URDFparser(object):
 				fh = cs.mtimes(Ic_composite[i], Si[i])
 				H[i, i] = cs.mtimes(Si[i].T, fh)
 				j = i
-				while (j-1) is not -1:
+				while j is not 0:
 					fh = cs.mtimes(i_X_p[j].T, fh)
 					j -= 1
 					H[i,j] = cs.mtimes(Si[j].T, fh)
@@ -349,6 +349,43 @@ class URDFparser(object):
 			H = cs.Function("H", [q], [H])
 			return H
 
+
+	def get_jointspace_inertia_matrix_2point0(self, root, tip):
+			"""Returns the joint space inertia matrix aka the H-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
+			if self.robot_desc is None:
+				raise ValueError('Robot description not loaded from urdf')
+
+
+			joint_list = self._get_joint_list(root, tip)
+			Ic = self.get_spatial_inertias(root, tip)
+			n_bodies = len(Ic)
+			q = cs.SX.sym("q", n_bodies)
+			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
+			H = cs.SX.zeros(n_bodies, n_bodies)
+			Ic_composite = [None]*len(Ic)
+
+			for i in range(0, n_bodies):
+				Ic_composite[i] = Ic[i]
+
+			for i in range(n_bodies-1, -1, -1):
+				Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
+
+
+			#print "Ic_composite 0:", Ic[0], "\n"
+			#print "Ic_composite 1:", Ic[1], "\n"
+
+			#for i in range(0, n_bodies):
+				fh = cs.mtimes(Ic_composite[i], Si[i])
+				H[i, i] = cs.mtimes(Si[i].T, fh)
+				j = i
+				while j is not 0:
+					fh = cs.mtimes(i_X_p[j].T, fh)
+					j -= 1
+					H[i,j] = cs.mtimes(Si[j].T, fh)
+					H[j,i] = H[i,j]
+
+			H = cs.Function("H", [q], [H])
+			return H
 
 	#make another one with only root and tip as input
 	def _get_C(self, joint_list, i_X_p, Si, Ic, q, q_dot, n_joints, f_ext = None):
