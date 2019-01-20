@@ -10,8 +10,8 @@ import casadi as cs
 from urdf2casadi import converter
 fk_dict = converter.from_file("root", "gantry_tool0", "robot_urdf_file_path.urdf")
 print fk_dict.keys()
-# should give ['upper', 'T_fk', 'lower', 'q', 'joint_names', 'joint_list']
-forward_kinematics = cs.Function("FK",[fk_dict["q"]],[fk_dict["T_fk"]])
+# should give ['q', 'upper', 'lower', 'dual_quaternion_fk', 'joint_names', 'T_fk', 'joint_list', 'quaternion_fk']
+forward_kinematics = fk_dict["T_fk"]
 print forward_kinematics([0.3, 0.3, 0.3, 0., 0.3, 0.7])
 ```
 
@@ -20,6 +20,6 @@ print forward_kinematics([0.3, 0.3, 0.3, 0., 0.3, 0.7])
 - [x] Forward kinematics of rotation with quaternion
 - [x] Dual Quaternions as alternative to SE(3) matrices
 - [ ] Dynamics from links and their inertia tags
-- [ ] Denavit Hartenberg?
+- [x] Denavit Hartenberg?
 - [ ] unit tests
 - [ ] Examples
