@@ -23,7 +23,7 @@ def inertia_matrix(I):
     """Returns the inertia matrix given the inertia vector """
     return np.array([I[0], I[1], I[2]], [I[1], I[3], I[4]], [I[2], I[4], I[5]])
 
-
+#must be verified - check
 def motion_cross_product(v):
     """Returns the cross product matrix of a spatial vector"""
     mcp = cs.SX.zeros(6, 6)
@@ -59,6 +59,7 @@ def motion_cross_product(v):
 
     return mcp
 
+#must be verified - check
 def force_cross_product(v):
     return -motion_cross_product(v).T
 
@@ -74,15 +75,23 @@ def spatial_inertia_matrix_Ic(ixx, ixy, ixz, iyy, iyz, izz, mass):
 
     return Ic
 
-def spatial_inertia_matrix_IO(ixx, ixy, ixz, iyy, iyz, izz, mass, pos):
+#must be verified - check
+def spatial_inertia_matrix_IO(ixx, ixy, ixz, iyy, iyz, izz, mass, c):
     """Returns a spatial inertia matrix expressed at the origin """
     IO = np.zeros([6, 6])
-    pos_cross = numpy_skew_symmetric(pos)
+    cx = numpy_skew_symmetric(c)
+    #print "cx: \n", cx, "\n"
     inertia_matrix =np.array([[ixx, -ixy, -ixz], [-ixy, iyy, -iyz], [-ixz, -iyz, izz]])
+    #print "3x3 inertia tensor: \n", inertia_matrix, "\n"
 
-    IO[:3, :3] = inertia_matrix + mass*np.dot(pos_cross, np.transpose(pos_cross))
-    IO[:3, 3:] = mass*pos_cross
-    IO[3:, :3] = mass*np.transpose(pos_cross)
+    IO[:3, :3] = inertia_matrix + mass*(np.dot(cx, np.transpose(cx)))
+    #print "I + (m cx cx^T):\n", IO[:3, :3], "\n"
+
+    IO[:3, 3:] = mass*cx
+    #print "mcx: \n", IO[:3, 3:], "\n"
+
+    IO[3:, :3] = mass*np.transpose(cx)
+    #print "mcx^T: \n", IO[3:, :3], "\n"
 
     IO[3, 3] = mass
     IO[4, 4] = mass
@@ -90,8 +99,9 @@ def spatial_inertia_matrix_IO(ixx, ixy, ixz, iyy, iyz, izz, mass, pos):
 
     return IO
 
+#must be verified (is, but look over)
 def XT(xyz, rpy):
-    """Returns a spatial transformation matrix on X_L form"""
+    """Returns a general spatial transformation matrix matrix"""
     X = np.zeros([6, 6])
 
     rotation_matrix = numpy_rotation_rpy(rpy[0], rpy[1], rpy[2])
@@ -180,6 +190,7 @@ def XJ_prismatic2(axis, qi):
     X[5, 5] = 1
     return X
 
+#must be verified (is, but look over)
 def XJ_prismatic(axis, qi):
         """Returns a symbolic spatial translation transformation matrix for prismatic joint"""
         X = cs.SX.zeros(6, 6)
@@ -201,12 +212,13 @@ def XJ_prismatic(axis, qi):
 
         return X
 
+#must be verified (is, but look over)
 def XJ_revolute(axis, qi):
     """Returns a symbolic spatial rotation transformation matrix for a revolute joint"""
     X = cs.SX.zeros(6, 6)
     R = cs.SX.zeros(3, 3)
-    s = cs.sin(qi)
-    c = cs.cos(qi)
+    s = cs.sin(-qi)
+    c = cs.cos(-qi)
 
     if axis[0] == 1:
         R[0, 0] = 1

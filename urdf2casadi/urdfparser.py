@@ -253,41 +253,24 @@ class URDFparser(object):
 			H = cs.SX.zeros(n_joints, n_joints)
 			Ic_composite = [None]*len(Ic)
 
-			#for i in range(0, n_joints-1):
-				#Ic[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ic[i], i_X_p[i]))
 
-			#print "S:", Si
-			#print " "
-			#print "iXp:", i_X_p
-			#print " "
-			#print "Ic:", Ic
 			for i in range(0, n_joints):
 				Ic_composite[i] = Ic[i]
 
 			for i in range(n_joints-1, -1, -1):
-				Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
+				if i is not 0:
+					Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
 
-			#print "Ic_composite 0:", Ic_composite[0], "\n"
-			#print "Ic_composite 1:", Ic_composite[1], "\n"
 
 			for i in range(n_joints-1, -1, -1):
-				#print Ic
-				#print " "
-				#print "i:", i
 				fh = cs.mtimes(Ic_composite[i], Si[i])
-				#print "fh_i:", fh
-				#print " "
 				H[i, i] = cs.mtimes(Si[i].T, fh)
-				#print "H", i, i, ":", H[i,i]
-				#print " "
 				j = i
-				while (j) is not 0:
+				while j is not 0:
 					fh = cs.mtimes(i_X_p[j].T, fh)
-					#print "fh_j:", fh
 					j -= 1
 					H[i,j] = cs.mtimes(Si[j].T, fh)
 					H[j,i] = H[i,j]
-					#print "H[", i, ",", j, "] = ", H[i,j]
 
 			M = cs.Function("M", [q], [H])
 
@@ -323,6 +306,12 @@ class URDFparser(object):
 			n_bodies = len(Ic)
 			q = cs.SX.sym("q", n_bodies)
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
+
+			#print "iXp 0:", i_X_p[0], "\n"
+			#print "iXp 1:", i_X_p[1], "\n"
+			#print "S 0:", Si[0], "\n"
+			#print "S 1:", Si[1], "\n"
+
 			H = cs.SX.zeros(n_bodies, n_bodies)
 			Ic_composite = [None]*len(Ic)
 
@@ -330,21 +319,30 @@ class URDFparser(object):
 				Ic_composite[i] = Ic[i]
 
 			for i in range(n_bodies-1, -1, -1):
-				Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
+				if i is not 0:
+					Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
 
-
-			#print "Ic_composite 0:", Ic[0], "\n"
-			#print "Ic_composite 1:", Ic[1], "\n"
+			#print "Ic 0:", Ic[0], "\n"
+			#print "Ic 1:", Ic[1], "\n"
+			#print "Ic_composite 0:", Ic_composite[0], "\n"
+			#print "Ic_composite 1:", Ic_composite[1], "\n"
 
 			for i in range(0, n_bodies):
+				#print "i:", i, "\n"
 				fh = cs.mtimes(Ic_composite[i], Si[i])
+				#print "fh i:", fh, "\n"
 				H[i, i] = cs.mtimes(Si[i].T, fh)
+				#print "H[i,i]:", H[i,i], "\n"
 				j = i
 				while j is not 0:
+					#print "j:", j, "\n"
 					fh = cs.mtimes(i_X_p[j].T, fh)
+					#print "fh j:", fh, "\n"
 					j -= 1
+					#print "fh j:", fh, "\n"
 					H[i,j] = cs.mtimes(Si[j].T, fh)
 					H[j,i] = H[i,j]
+					#print "H[i,h] = H[j,i]:", H[i,j], "\n"
 
 			H = cs.Function("H", [q], [H])
 			return H
@@ -364,17 +362,15 @@ class URDFparser(object):
 			H = cs.SX.zeros(n_bodies, n_bodies)
 			Ic_composite = [None]*len(Ic)
 
+
 			for i in range(0, n_bodies):
 				Ic_composite[i] = Ic[i]
 
 			for i in range(n_bodies-1, -1, -1):
-				Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
+				if i is not 0:
+					Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
 
-
-			#print "Ic_composite 0:", Ic[0], "\n"
-			#print "Ic_composite 1:", Ic[1], "\n"
-
-			#for i in range(0, n_bodies):
+			for i in range(n_bodies-1, -1, -1):
 				fh = cs.mtimes(Ic_composite[i], Si[i])
 				H[i, i] = cs.mtimes(Si[i].T, fh)
 				j = i
@@ -387,133 +383,133 @@ class URDFparser(object):
 			H = cs.Function("H", [q], [H])
 			return H
 
-	#make another one with only root and tip as input
+
 	def _get_C(self, joint_list, i_X_p, Si, Ic, q, q_dot, n_joints, f_ext = None):
-			"""Returns the joint space bias matrix aka the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
-			#print "v", i, ":", v[i], "\n"
-			#print "a", i, ":", a[i], "\n"
-			#print "f", i, ":", f[i], "\n"
-			#joint_list = self._get_joint_list(root, tip)
-			#n_joints = len(joint_list)
-			#q = cs.SX.sym("q", n_joints)
-			#q_dot = cs.SX.sym("q_dot", n_joints)
+		"""Returns the joint space bias matrix aka the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
+		#print "v", i, ":", v[i], "\n"
+		#print "a", i, ":", a[i], "\n"
+		#print "f", i, ":", f[i], "\n"
+		#joint_list = self._get_joint_list(root, tip)
+		#n_joints = len(joint_list)
+		#q = cs.SX.sym("q", n_joints)
+		#q_dot = cs.SX.sym("q_dot", n_joints)
 
-			#i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
-			#Ic = self.get_spatial_inertias(root, tip)
+		#i_X_p, i_X_0, Si = self._sforms_and_Si(q, joint_list)
+		#Ic = self.get_spatial_inertias(root, tip)
 
 
-			v = []
-			a = []
-			#f = cs.SX.zeros(n_bodies-1)
-			f = []
-			C = cs.SX.zeros(n_joints)
-			v0 = cs.SX.zeros(6,1)
-			a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
+		v = []
+		a = []
+		#f = cs.SX.zeros(n_bodies-1)
+		f = []
+		C = cs.SX.zeros(n_joints)
+		v0 = cs.SX.zeros(6,1)
+		a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
-			for i in range(0, n_joints):
+		for i in range(0, n_joints):
 
-				#OBS! Boor legge denne i jcalc slik at denne ikke er avhengig av jointtype
-				if (joint_list[i].type == "fixed"):
-					if(i is 0):
-						v.append(v0)
-						a.append(cs.mtimes(i_X_p[i], -a_gravity))
-					else:
-						v.append(cs.mtimes(i_X_p[i], v[i-1]))
-						a.append(cs.mtimes(i_X_p[i], a[i-1]))
+			#OBS! Boor legge denne i jcalc slik at denne ikke er avhengig av jointtype
+			if (joint_list[i].type == "fixed"):
+				if(i is 0):
+					v.append(v0)
+					a.append(cs.mtimes(i_X_p[i], -a_gravity))
 				else:
-					vJ = cs.mtimes(Si[i],q_dot[i])
+					v.append(cs.mtimes(i_X_p[i], v[i-1]))
+					a.append(cs.mtimes(i_X_p[i], a[i-1]))
+			else:
+				vJ = cs.mtimes(Si[i],q_dot[i])
 
-					if(i is 0):
-						v.append(vJ)
-						a.append(cs.mtimes(i_X_p[i], a_gravity) + vJ)
-					else:
-						v.append(cs.mtimes(i_X_p[i], v[i-1]) + Si[i]*q_dot[i])
-						a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
+				if(i is 0):
+					v.append(vJ)
+					a.append(cs.mtimes(i_X_p[i], a_gravity) + vJ)
+				else:
+					v.append(cs.mtimes(i_X_p[i], v[i-1]) + Si[i]*q_dot[i])
+					a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
 
 
-				f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
+			f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
 
 
-			if f_ext is not None:
-				f = self._apply_external_forces(f_ext, f, i_X_0)
+		if f_ext is not None:
+			f = self._apply_external_forces(f_ext, f, i_X_0)
 
-			for i in range(n_joints-1, -1, -1):
-				C[i] = cs.mtimes(Si[i].T, f[i])
+		for i in range(n_joints-1, -1, -1):
+			C[i] = cs.mtimes(Si[i].T, f[i])
 
-				if (i-1) is not -1:
-					f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
+			if (i-1) is not -1:
+				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
-			# For numerical verification:
-			C2 = cs.Function("C", [q, q_dot], [C])
+		# For numerical verification:
+		C2 = cs.Function("C", [q, q_dot], [C])
 
-			C_num0 = C2([0.1, 0.1], [0.1, 0.1])
-			print "numerical tau with zeros as input:", (C_num0)
+		C_num0 = C2([0.1, 0.1], [0.1, 0.1])
+		print "numerical tau with zeros as input:", (C_num0)
 
-			C_num5 = C2([5., 5.], [5., 5.])
-			print "numerical tau with fives as input:", (C_num5)
+		C_num5 = C2([5., 5.], [5., 5.])
+		print "numerical tau with fives as input:", (C_num5)
 
-			return C
+		return C
 
 
 	def get_jointspace_bias_matrix(self, root, tip, f_ext = None):
-			"""Returns the joint space bias matrix aka the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
-			if self.robot_desc is None:
-				raise ValueError('Robot description not loaded from urdf')
+		"""Returns the joint space bias matrix aka the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
+		if self.robot_desc is None:
+			raise ValueError('Robot description not loaded from urdf')
 
 
-			joint_list = self._get_joint_list(root, tip)
-			n_joints = len(joint_list)
-			q = cs.SX.sym("q", n_joints)
-			q_dot = cs.SX.sym("q_dot", n_joints)
+		joint_list = self._get_joint_list(root, tip)
+		n_joints = len(joint_list)
+		q = cs.SX.sym("q", n_joints)
+		q_dot = cs.SX.sym("q_dot", n_joints)
 
-			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
-			Ic = self.get_spatial_inertias(root, tip)
+		i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
+		Ic = self.get_spatial_inertias(root, tip)
 
 
-			v = []
-			a = []
-			#f = cs.SX.zeros(n_bodies-1)
-			f = []
-			tau = cs.SX.zeros(n_joints)
-			v0 = cs.SX.zeros(6,1)
-			a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
+		v = []
+		a = []
+		#f = cs.SX.zeros(n_bodies-1)
+		f = []
+		tau = cs.SX.zeros(n_joints)
+		v0 = cs.SX.zeros(6,1)
+		a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
-			for i in range(0, n_joints):
+		for i in range(0, n_joints):
 
-				#OBS! Boor legge denne i jcalc slik at denne ikke er avhengig av jointtype
-				if (joint_list[i].type == "fixed"):
-					if(i is 0):
-						v.append(v0)
-						a.append(cs.mtimes(i_X_p[i], -a_gravity))
-					else:
-						v.append(cs.mtimes(i_X_p[i], v[i-1]))
-						a.append(cs.mtimes(i_X_p[i], a[i-1]))
+			#OBS! Boor legge denne i jcalc slik at denne ikke er avhengig av jointtype
+			if (joint_list[i].type == "fixed"):
+				if(i is 0):
+					v.append(v0)
+					a.append(cs.mtimes(i_X_p[i], -a_gravity))
 				else:
-					vJ = cs.mtimes(Si[i],q_dot[i])
+					v.append(cs.mtimes(i_X_p[i], v[i-1]))
+					a.append(cs.mtimes(i_X_p[i], a[i-1]))
+			else:
+				vJ = cs.mtimes(Si[i],q_dot[i])
 
-					if(i is 0):
-						v.append(vJ)
-						a.append(cs.mtimes(i_X_p[i], a_gravity) + vJ)
-					else:
-						v.append(cs.mtimes(i_X_p[i], v[i-1]) + Si[i]*q_dot[i])
-						a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
-
-
-				f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
-
-
-			if f_ext is not None:
-				f = self._apply_external_forces(f_ext, f, i_X_0)
-
-			for i in range(n_joints-1, -1, -1):
-				tau[i] = cs.mtimes(Si[i].T, f[i])
-
-				if (i-1) is not -1:
-					f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
+				if(i is 0):
+					v.append(vJ)
+					a.append(cs.mtimes(i_X_p[i], a_gravity) + vJ)
+				else:
+					v.append(cs.mtimes(i_X_p[i], v[i-1]) + Si[i]*q_dot[i])
+					a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
 
 
-			C = cs.Function("C", [q, q_dot], [tau])
-			return C
+			f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
+
+
+		if f_ext is not None:
+			f = self._apply_external_forces(f_ext, f, i_X_0)
+
+		for i in range(n_joints-1, -1, -1):
+			tau[i] = cs.mtimes(Si[i].T, f[i])
+
+			if (i-1) is not -1:
+				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
+
+
+		C = cs.Function("C", [q, q_dot], [tau])
+		return C
 
 
 
