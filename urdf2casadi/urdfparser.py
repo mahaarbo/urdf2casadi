@@ -114,7 +114,7 @@ class URDFparser(object):
 
 
 	def _get_spatial_transforms_and_Si(self, q, joint_list):
-		"""Helper function for RNEA which calculates spatial transform matrices and motion subspace matrices"""
+		"""Helper function which calculates spatial transform matrices and motion subspace matrices"""
 		i_X_0 = []
 		i_X_p = []
 		Sis = []
@@ -186,10 +186,10 @@ class URDFparser(object):
 		#print "spatial inertias:", Ic, "\n"
 		#print "iXp:", i_X_p, "\n"
 
-		v = []
-		a = []
+		v = cs.SX.zeros(n_joints)
+		a = cs.SX.zeros(n_joints)
 		#f = cs.SX.zeros(n_bodies-1)
-		f = []
+		f = cs.SX.zeros(n_joints)
 		tau = cs.SX.zeros(n_joints)
 		v0 = cs.SX.zeros(6,1)
 		a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
@@ -199,20 +199,20 @@ class URDFparser(object):
 			#OBS! Boor legge denne i jcalc slik at RNEA ikke er avhengig av jointtype
 			if (joint_list[i].type == "fixed"):
 				if(i is 0):
-					v.append(v0)
-					a.append(cs.mtimes(i_X_p[i], -a_gravity))
+					v[i] = v0
+					a[i] = cs.mtimes(i_X_p[i], a_gravity)
 				else:
-					v.append(cs.mtimes(i_X_p[i], v[i-1]))
-					a.append(cs.mtimes(i_X_p[i], a[i-1]))
+					v[i] = cs.mtimes(i_X_p[i], v[i-1])
+					a[i] = cs.mtimes(i_X_p[i], a[i-1])
 			else:
 				vJ = cs.mtimes(Si[i],q_dot[i])
 
 				if(i is 0):
-					v.append(vJ)
-					a.append(cs.mtimes(i_X_p[i], a_gravity) + vJ)
+					#v[i] = vJ
+					a[i] = cs.mtimes(i_X_p[i], a_gravity) + vJ
 				else:
-					v.append(cs.mtimes(i_X_p[i], v[i-1]) + Si[i]*q_dot[i])
-					a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(Si[i],q_ddot[i]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
+					v[i] = cs.mtimes(i_X_p[i], v[i-1]) + cs.mtimes(Si[i], q_dot[i])
+					a[i] = cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(Si[i],q_ddot[i]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ)
 					#print "\n X times a(i-1):", cs.mtimes(i_X_p[i], a[i-1]), "\n", "\n"
 					#print "S times q_ddot(i):", cs.mtimes(Si[i],q_ddot[i]) , "\n", "\n"
 					#print "motion cross product(v(i)) times vJ(= S times q_dot):", cs.mtimes(plucker.motion_cross_product(v[i]),vJ), "\n", "\n"
@@ -222,10 +222,29 @@ class URDFparser(object):
 			#print  "\n"
 
 
-			f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
+			f[i] = (cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))#dim 6x1
+
+
 			#print "v", i, ":", v[i], "\n"
 			#print "a", i, ":", a[i], "\n"
 			#print "f", i, ":", f[i], "\n"
+
+		f0 = cs.Function("f0", [q, q_dot, q_ddot], [f[0]])
+		v0 = cs.Function("v0", [q, q_dot], [v[0]])
+		a0 = cs.Function("a0", [q, q_dot, q_ddot], [a[0]])
+
+		f1 = cs.Function("f1", [q, q_dot, q_ddot], [f[1]])
+		v1 = cs.Function("v1", [q, q_dot], [v[1]])
+		a1 = cs.Function("a1", [q, q_dot, q_ddot], [a[1]])
+
+		f_num = f([0.5, 0.5], [0.5, 0.5], [0., 0.])
+		print "f, q, q_dot = 0.5:", (f_num), "\n"
+
+		v_num = v([0.5, 0.5], [0.5, 0.5])
+		print "v, q, q_dot = 0.5:", (v_num), "\n"
+
+		a_num = a([0.5, 0.5], [0.5, 0.5], [0., 0.])
+		print "f, q, q_dot = 0.5:", (a_num), "\n"
 
 
 		if f_ext is not None:
