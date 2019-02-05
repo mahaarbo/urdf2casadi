@@ -128,24 +128,29 @@ class URDFparser(object):
 
 			elif joint.type == "prismatic":
 				XJ = plucker.XJ_prismatic(joint.axis, q[i])
-				print joint.axis.xyz
-				if joint.axis[0] == 1.0:
-					Si = cs.SX([0, 0, 0, 1, 0, 0])
-				elif joint.axis[1] == 1.0:
-					Si = cs.SX([0, 0, 0, 0, 1, 0])
-				elif joint.axis[2] == 1.0:
-					Si = cs.SX([0, 0, 0, 0, 0, 1])
+				#print joint.axis.xyz
+				Si = cs.SX([0, 0, 0, joint.axis[0], joint.axis[1], joint.axis[2]])
+
+				#if joint.axis[0] == 1.0:
+				#	Si = cs.SX([0, 0, 0, 1, 0, 0])
+				#elif joint.axis[1] == 1.0:
+				#	Si = cs.SX([0, 0, 0, 0, 1, 0])
+				#elif joint.axis[2] == 1.0:
+				#	Si = cs.SX([0, 0, 0, 0, 0, 1])
 
 			elif joint.type in ["revolute", "continuous"]:
 				XJ = plucker.XJ_revolute(joint.axis, q[i])
-				if joint.axis[0] == 1.0:
-					Si = cs.SX([1, 0, 0, 0, 0, 0])
-				elif joint.axis[1] == 1.0:
-					Si = cs.SX([0, 1, 0, 0, 0, 0])
-				elif joint.axis[2] == 1.0:
-					Si = cs.SX([0, 0, 1, 0, 0, 0])
+				#if joint.axis[0] == 1.0:
+				#	Si = cs.SX([1, 0, 0, 0, 0, 0])
 
-			i_X_p.append(cs.mtimes(XJ, XT))
+				#elif joint.axis[1] == 1.0:
+				Si = cs.SX([joint.axis[0], joint.axis[1], joint.axis[2], 0, 0, 0])
+				#elif joint.axis[1] == -1.0:
+				#	Si = cs.SX([0, -1, 0, 0, 0, 0])
+				#elif joint.axis[2] == 1.0:
+				#	Si = cs.SX([0, 0, 1, 0, 0, 0])
+
+			i_X_p.append(cs.mtimes(XJ, XT))#plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i]))
 			Sis.append(Si)
 
 			if(i == 0):
