@@ -127,14 +127,27 @@ class URDFparser(object):
 				XJ = plucker.XT(joint.origin.xyz, joint.origin.rpy)
 
 			elif joint.type == "prismatic":
+				#XJ = plucker.XJ_prismatic(joint.axis, q[i])
 				XJ = plucker.XJ_prismatic(joint.axis, q[i])
 				Si = cs.SX([0, 0, 0, joint.axis[0], joint.axis[1], joint.axis[2]])
 
+				i_X_p.append(cs.mtimes(XJ, XT))
+
 			elif joint.type in ["revolute", "continuous"]:
-				XJ = plucker.XJ_revolute_posneg(joint.axis, q[i])
+				#XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
+				XJT = plucker.XJXT(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
+
 				Si = cs.SX([joint.axis[0], joint.axis[1], joint.axis[2], 0, 0, 0])
-			
-			i_X_p.append(cs.mtimes(XJ, XT))#plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i]))
+				i_X_p.append(XJT)
+			#i_X_p.append(cs.mtimes(XJ, XT))#plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i]))
+			#XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
+			#XJT_inv = cs.solve(XJT, cs.SX.eye(XJT.size1()))
+			#XJ = plucker.XJ_revolute_posneg(joint.axis, q[i])
+			#XJXT = cs.mtimes(XJ, XT)
+			#XJXT2 = plucker.XJXT(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
+
+			#print "XJT:", XJT
+			#print "XJ*XT:", cs.mtimes(plucker.XJ_revolute_posneg(joint.axis, q[i]), XT)
 			Sis.append(Si)
 
 			if(i == 0):
