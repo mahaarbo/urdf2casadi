@@ -150,8 +150,13 @@ def XJ_revolute(axis, qi):
     """Returns a symbolic spatial rotation transformation matrix for a revolute joint"""
     X = cs.SX.zeros(6, 6)
     R = cs.SX.zeros(3, 3)
-    s = cs.sin(qi)
-    c = cs.cos(qi)
+
+    if axis[0] is -1 or axis[1] is -1 or axis[2] is -1:
+        s = cs.sin(-qi)
+        c = cs.cos(-qi)
+    else:
+        s = cs.sin(qi)
+        c = cs.cos(qi)
 
     if axis[0] == 1:
         R[0, 0] = 1
@@ -228,6 +233,73 @@ def XJ_revolute_new(axis, qi):
 
     X[:3, :3] = R
     X[3:, 3:] = R
+    return X
+
+
+def XJ_revolute_posneg(axis, qi):
+    """Returns a symbolic spatial rotation transformation matrix for a revolute joint"""
+    X = cs.SX.zeros(6, 6)
+    R = cs.SX.zeros(3, 3)
+
+
+    def Rx(scale):
+        s = cs.sin(qi*scale)
+        c = cs.cos(qi*scale)
+        Rx = cs.SX.zeros(3, 3)
+        Rx[0, 0] = 1
+        Rx[1, 1] = c
+        Rx[2, 2] = c
+        Rx[1, 2] = s
+        Rx[2, 1] = -s
+
+        return Rx
+
+    def Ry(scale):
+        s = cs.sin(qi*scale)
+        c = cs.cos(qi*scale)
+        Ry = cs.SX.zeros(3, 3)
+        Ry[0, 0] = c
+        Ry[0, 2] = -s
+        Ry[1, 1] = 1
+        Ry[2, 0] = s
+        Ry[2, 2] = c
+
+        return Ry
+
+    def Rz(scale):
+        s = cs.sin(qi*scale)
+        c = cs.cos(qi*scale)
+        Rz = cs.SX.zeros(3, 3)
+        Rz[0, 0] = c
+        Rz[0, 1] = s
+        Rz[1, 0] = -s
+        Rz[1, 1] = c
+        Rz[2, 2] = 1
+
+        return Rz
+
+    #print axis
+
+    #print Rx(axis[0])
+    #print Ry(axis[1])
+    #print Rz(axis[2])
+
+    R = cs.mtimes(Rx(axis[0]), cs.mtimes(Ry(axis[1]), Rz(axis[2])))
+    #if axis[0] is 1.0: #or axis[0] is -1.0:
+    #    R = Rx(axis[0])
+
+    #elif axis[1] is 1: #or (axis[1] is -1.0):
+    #    R = Ry(axis[1])
+
+    #elif axis[1] is -1.0:
+    #    print "lalala"
+    #    R = Ry(axis[1])
+
+    #elif axis[2] is 1: #or axis[2] is -1.0:
+    #    R = Rz(axis[2])
+
+    X[:3, :3] = R.T
+    X[3:, 3:] = R.T
     return X
 
 def Xrot(axis, qi):
