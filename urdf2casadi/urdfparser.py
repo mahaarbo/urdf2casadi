@@ -104,10 +104,12 @@ class URDFparser(object):
 			if item in self.robot_desc.link_map:
 				link = self.robot_desc.link_map[item]
 				#print link.name
-				if link.inertial is not None:
+				if link.inertial is None:
+					spatial_inertia = np.zeros((6, 6))
+				else:
 					I = link.inertial.inertia
 					spatial_inertia = plucker.spatial_inertia_matrix_IO(I.ixx, I.ixy, I.ixz, I.iyy, I.iyz, I.izz, link.inertial.mass, link.inertial.origin.xyz)
-					spatial_inertias.append(spatial_inertia)
+				spatial_inertias.append(spatial_inertia)
 
 		spatial_inertias.pop(0)
 		return spatial_inertias
@@ -127,27 +129,14 @@ class URDFparser(object):
 				XJ = plucker.XT(joint.origin.xyz, joint.origin.rpy)
 
 			elif joint.type == "prismatic":
-				#XJ = plucker.XJ_prismatic(joint.axis, q[i])
 				XJ = plucker.XJ_prismatic(joint.axis, q[i])
 				Si = cs.SX([0, 0, 0, joint.axis[0], joint.axis[1], joint.axis[2]])
 
-				i_X_p.append(cs.mtimes(XJ, XT))
-
 			elif joint.type in ["revolute", "continuous"]:
-				#XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
-				XJT = plucker.XJXT(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
-
+				XJ = plucker.XJ_revolute_posneg(joint.axis, q[i])
 				Si = cs.SX([joint.axis[0], joint.axis[1], joint.axis[2], 0, 0, 0])
-				i_X_p.append(XJT)
-			#i_X_p.append(cs.mtimes(XJ, XT))#plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i]))
-			#XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
-			#XJT_inv = cs.solve(XJT, cs.SX.eye(XJT.size1()))
-			#XJ = plucker.XJ_revolute_posneg(joint.axis, q[i])
-			#XJXT = cs.mtimes(XJ, XT)
-			#XJXT2 = plucker.XJXT(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 
-			#print "XJT:", XJT
-			#print "XJ*XT:", cs.mtimes(plucker.XJ_revolute_posneg(joint.axis, q[i]), XT)
+			i_X_p.append(cs.mtimes(XJ, XT))#plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i]))
 			Sis.append(Si)
 
 			if(i == 0):

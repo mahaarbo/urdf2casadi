@@ -160,6 +160,12 @@ def XJ_prismatic(axis, qi):
         r = axis*qi
         return spatial_transform(R, r)
 
+def XJ_prismatic_BA(axis, qi):
+        """Returns a symbolic spatial translation transformation matrix for prismatic joint"""
+        R = np.identity(3)
+        r = axis*qi
+        return spatial_transform_BA(R, r)
+
         #X[0, 0] = 1
         #X[1, 1] = 1
         #X[2, 2] = 1
@@ -181,37 +187,33 @@ def XJ_revolute(axis, qi):
     """Returns a symbolic spatial rotation transformation matrix for a revolute joint"""
     X = cs.SX.zeros(6, 6)
     R = cs.SX.zeros(3, 3)
+    s = cs.sin(qi)
+    c = cs.cos(qi)
 
-    if axis[0] is -1 or axis[1] is -1 or axis[2] is -1:
-        s = cs.sin(-qi)
-        c = cs.cos(-qi)
-    else:
-        s = cs.sin(qi)
-        c = cs.cos(qi)
 
     if axis[0] == 1:
         R[0, 0] = 1
         R[1, 1] = c
         R[2, 2] = c
-        R[1, 2] = s
-        R[2, 1] = -s
+        R[1, 2] = -s
+        R[2, 1] = s
 
     elif axis[1] == 1:
         R[0, 0] = c
-        R[0, 2] = -s
+        R[0, 2] = s
         R[1, 1] = 1
-        R[2, 0] = s
+        R[2, 0] = -s
         R[2, 2] = c
 
-    else:
+    elif axis[2] == 1:
         R[0, 0] = c
-        R[0, 1] = s
-        R[1, 0] = -s
+        R[0, 1] = -s
+        R[1, 0] = s
         R[1, 1] = c
         R[2, 2] = 1
 
-    X[:3, :3] = R.T
-    X[3:, 3:] = R.T
+    X[:3, :3] = R
+    X[3:, 3:] = R
     return X
 
 
@@ -229,8 +231,8 @@ def XJ_revolute_posneg(axis, qi):
         Rx[0, 0] = 1
         Rx[1, 1] = c
         Rx[2, 2] = c
-        Rx[1, 2] = s
-        Rx[2, 1] = -s
+        Rx[1, 2] = -s
+        Rx[2, 1] = s
 
         return Rx
 
@@ -239,9 +241,9 @@ def XJ_revolute_posneg(axis, qi):
         c = cs.cos(qi*scale)
         Ry = cs.SX.zeros(3, 3)
         Ry[0, 0] = c
-        Ry[0, 2] = -s
+        Ry[0, 2] = s
         Ry[1, 1] = 1
-        Ry[2, 0] = s
+        Ry[2, 0] = -s
         Ry[2, 2] = c
 
         return Ry
@@ -251,8 +253,8 @@ def XJ_revolute_posneg(axis, qi):
         c = cs.cos(qi*scale)
         Rz = cs.SX.zeros(3, 3)
         Rz[0, 0] = c
-        Rz[0, 1] = s
-        Rz[1, 0] = -s
+        Rz[0, 1] = -s
+        Rz[1, 0] = s
         Rz[1, 1] = c
         Rz[2, 2] = 1
 
@@ -265,7 +267,6 @@ def XJ_revolute_posneg(axis, qi):
     #print Rz(axis[2])
 
     R = cs.mtimes(Rx(axis[0]), cs.mtimes(Ry(axis[1]), Rz(axis[2])))
-    print R.T
 
     #if axis[0] is 1.0: #or axis[0] is -1.0:
     #    R = Rx(axis[0])
@@ -280,8 +281,8 @@ def XJ_revolute_posneg(axis, qi):
     #elif axis[2] is 1: #or axis[2] is -1.0:
     #    R = Rz(axis[2])
 
-    X[:3, :3] = R.T
-    X[3:, 3:] = R.T
+    X[:3, :3] = R
+    X[3:, 3:] = R
     return X
 
 def Xrot(axis, qi):
