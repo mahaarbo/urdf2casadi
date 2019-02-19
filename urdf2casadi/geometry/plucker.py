@@ -6,6 +6,7 @@ import transformation_matrix as tm
 
 
 
+
 def numpy_skew_symmetric(v):
     """Returns a skew symmetric matrix from vector. p q r"""
     return np.array([[0, -v[2], v[1]],
@@ -98,6 +99,13 @@ def numpy_rotation_rpy(roll, pitch, yaw):
                      [sy*cp,  sy*sp*sr + cy*cr,  sy*sp*cr - cy*sr],
                      [  -sp,             cp*sr,             cp*cr]])
 
+def spatial_force_transform(R, r):
+    X = cs.SX.zeros(6,6)
+    X[:3, :3] = R.T
+    X[3:, 3:] = R.T
+    X[:3, 3:] = cs.mtimes(cs.skew(r), R.T)
+    return X
+
 #fra A til B
 def spatial_transform(R, r):
     X = cs.SX.zeros(6,6)
@@ -116,12 +124,55 @@ def spatial_transform_BA(R, r):
     return X
 
 
+def XJXT2(xyz, rpy, axis, qi):
+    RT = numpy_rotation_rpy(rpy[0], rpy[1], rpy[2])
+    XT = spatial_transform(RT.T, xyz)
+    #print RT
+    #print XT
+        # joint rotation from skew sym axis angle
+    cqi = cs.cos(qi)
+    sqi = cs.sin(qi)
+    R = cs.SX.zeros(3, 3)
+
+    s00 = (1 - cqi)*axis[0]*axis[0] + cqi
+
+    s11 = (1 - cqi)*axis[1]*axis[1] + cqi
+    s22 = (1 - cqi)*axis[2]*axis[2] + cqi
+    s01 = (1 - cqi)*axis[0]*axis[1] - axis[2]*sqi
+    s10 = (1 - cqi)*axis[0]*axis[1] + axis[2]*sqi
+    s12 = (1 - cqi)*axis[1]*axis[2] - axis[0]*sqi
+    s21 = (1 - cqi)*axis[1]*axis[2] + axis[0]*sqi
+    s20 = (1 - cqi)*axis[0]*axis[2] - axis[1]*sqi
+    s02 = (1 - cqi)*axis[0]*axis[2] + axis[1]*sqi
+
+    R[0, 0] = s00
+    R[0, 1] = s01
+    R[0, 2] = s02
+
+    R[1, 0] = s10
+    R[1, 1] = s11
+    R[1, 2] = s12
+
+    R[2, 0] = s20
+    R[2, 1] = s21
+    R[2, 2] = s22
+
+
+    XJ = cs.SX.zeros(6,6)
+    XJ[:3, :3] = R.T
+    XJ[3:, 3:] = R.T
+    # print XJ
+
+    return cs.mtimes(XJ, XT)
+
+
+
 #denne funker for rene rotasjoner, positive og negative. Ikke blandete akser
 def XJT_revolute(xyz, rpy, axis, qi):
     T = tm.revolute(xyz,rpy,axis,qi)
     rotation_matrix = T[:3,:3]
     displacement = T[:3, 3]
-    return spatial_transform(rotation_matrix, displacement)
+    return spatial_transform_BA(rotation_matrix, displacement)
 
 #denne funker ikke at all
 def XJT_revolute_BA(xyz, rpy, axis, qi):
@@ -150,7 +201,7 @@ def XJT_prismatic_BA(xyz, rpy, axis, qi):
 def XT(xyz, rpy):
     """Returns a general spatial transformation matrix matrix"""
     rotation_matrix = numpy_rotation_rpy(rpy[0], rpy[1], rpy[2])
-    return spatial_transform(rotation_matrix, xyz)
+    return spatial_transform(rotation_matrix.T, xyz)
 
 
 #denne burde funke sammen med XT men neidaaaa...
@@ -212,9 +263,46 @@ def XJ_revolute(axis, qi):
         R[1, 1] = c
         R[2, 2] = 1
 
-    X[:3, :3] = R
-    X[3:, 3:] = R
+    X[:3, :3] = R.T
+    X[3:, 3:] = R.T
     return X
+
+
+def Rx(qi):
+    s = cs.sin(qi)
+    c = cs.cos(qi)
+    Rx = cs.SX.zeros(3, 3)
+    Rx[0, 0] = 1
+    Rx[1, 1] = c
+    Rx[2, 2] = c
+    Rx[1, 2] = -s
+    Rx[2, 1] = s
+
+    return Rx
+
+def Ry(qi):
+    s = cs.sin(qi)
+    c = cs.cos(qi)
+    Ry = cs.SX.zeros(3, 3)
+    Ry[0, 0] = c
+    Ry[0, 2] = s
+    Ry[1, 1] = 1
+    Ry[2, 0] = -s
+    Ry[2, 2] = c
+
+    return Ry
+
+def Rz(qi):
+    s = cs.sin(qi)
+    c = cs.cos(qi)
+    Rz = cs.SX.zeros(3, 3)
+    Rz[0, 0] = c
+    Rz[0, 1] = -s
+    Rz[1, 0] = s
+    Rz[1, 1] = c
+    Rz[2, 2] = 1
+
+    return Rz
 
 
 #funker for positive og negative 1-rotasjonsakser
@@ -281,8 +369,8 @@ def XJ_revolute_posneg(axis, qi):
     #elif axis[2] is 1: #or axis[2] is -1.0:
     #    R = Rz(axis[2])
 
-    X[:3, :3] = R
-    X[3:, 3:] = R
+    X[:3, :3] = R.T
+    X[3:, 3:] = R.T
     return X
 
 def Xrot(axis, qi):

@@ -68,6 +68,8 @@ class URDFparser(object):
 
 		return joint_list, actuated_names, upper, lower
 
+
+
 	def _get_joint_list(self, root, tip):
 		"""Returns list of all joints, for further use in ID- and FD-algorithms"""
 
@@ -134,10 +136,21 @@ class URDFparser(object):
 
 			elif joint.type in ["revolute", "continuous"]:
 				XJ = plucker.XJ_revolute_posneg(joint.axis, q[i])
-				Si = cs.SX([joint.axis[0], joint.axis[1], joint.axis[2], 0, 0, 0])
+				#XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
+				XJT = plucker.XJXT2(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
+				XJTfunc = cs.Function("XJTfunc", [q], [XJT])
+				XJXT1num = XJTfunc([0])
+				#print XJXT1num
 
-			i_X_p.append(cs.mtimes(XJ, XT))#plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i]))
+
+				Si = cs.SX([joint.axis[0], joint.axis[1], joint.axis[2], 0, 0, 0])
+				#print Si
+			#i_X_p.append(cs.mtimes(XJ, XT))
+            #plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i]))
+			i_X_p.append(XJT)
 			Sis.append(Si)
+
+
 
 			if(i == 0):
 				i_X_0.append(i_X_p[i])
@@ -159,7 +172,7 @@ class URDFparser(object):
 
 
 
-	def get_inverse_dynamics_RNEA(self, root, tip, f_ext = None):
+	def get_inverse_dynamics_RNEA(self, root, tip, gravity = None, f_ext = None):
 		"""Calculates and returns the casadi inverse dynamics, aka tau, using RNEA"""
 
 		if self.robot_desc is None:
@@ -173,16 +186,12 @@ class URDFparser(object):
 		i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
 		Ic = self.get_spatial_inertias(root, tip)
 
-
-		#print "spatial inertias:", Ic, "\n"
-		#print "iXp:", i_X_p, "\n"
-
 		v = []
 		a = []
-		#f = cs.SX.zeros(n_bodies-1)
 		f = []
 		tau = cs.SX.zeros(n_joints)
-		#v0 = cs.SX.zeros(6,1)
+
+
 
 		for i in range(0, n_joints):
 			#OBS! Boor legge denne i jcalc slik at denne ikke er avhengig av jointtype
@@ -198,12 +207,16 @@ class URDFparser(object):
 
 			if(i is 0):
 				v.append(vJ)
-				a.append(cs.mtimes(Si[i],q_ddot[i]))
+				if gravity is not None:
+					ag = cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]])
+					a.append(cs.mtimes(i_X_p[i], -ag) + cs.mtimes(Si[i],q_ddot[i]))
+				else:
+					a.append(cs.mtimes(Si[i],q_ddot[i]))
 
 
 			else:
 				v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
-				a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(Si[i],q_dot[i]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
+				a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(Si[i],q_ddot[i]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
 
 			f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))
 
@@ -211,18 +224,68 @@ class URDFparser(object):
 			f = self._apply_external_forces(f_ext, f, i_X_0)
 
 		for i in range(n_joints-1, -1, -1):
-			tau[i] = -cs.mtimes(Si[i].T, f[i])
+			tau[i] = cs.mtimes(Si[i].T, f[i])
 
 			if i is not 0:
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
-		#print "f 0:", f[0][2], "\n"
 
-
-
-
-		tau = cs.Function("C", [q, q_dot], [tau])
+		tau = cs.Function("C", [q, q_dot, q_ddot], [tau])
 		return tau
+
+
+
+	def get_gravity_RNEA(self, root, tip, gravity):
+		"""Calculates and returns the casadi inverse dynamics, aka tau, using RNEA"""
+
+		if self.robot_desc is None:
+			raise ValueError('Robot description not loaded from urdf')
+
+		joint_list = self._get_joint_list(root, tip)
+		n_joints = len(joint_list)
+		q = cs.SX.sym("q", n_joints)
+		i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
+		Ic = self.get_spatial_inertias(root, tip)
+
+
+		v = []
+		a = []
+		ag = cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]])
+		f = []
+		tau = cs.SX.zeros(n_joints)
+
+
+		for i in range(0, n_joints):
+			#OBS! Boor legge denne i jcalc slik at denne ikke er avhengig av jointtype
+			#if (joint_list[i].type == "fixed"):
+			#	if(i is 0):
+			#		v.append(v0)
+			#		a.append(cs.mtimes(i_X_p[i], -a_gravity))
+			#	else:
+			#		v.append(cs.mtimes(i_X_p[i], v[i-1]))
+			#		a.append(cs.mtimes(i_X_p[i], a[i-1]))
+			#else:
+			#vJ = cs.mtimes(Si[i],q_dot[i])
+
+			if(i is 0):
+				a.append(cs.mtimes(i_X_p[i], -ag))
+
+
+			else:
+				a.append(cs.mtimes(i_X_p[i], a[i-1]))
+			f.append(cs.mtimes(Ic[i], a[i]))
+
+
+		for i in range(n_joints-1, -1, -1):
+			tau[i] = cs.mtimes(Si[i].T, f[i])
+
+			if i is not 0:
+				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
+
+
+		tau = cs.Function("C", [q], [tau])
+		return tau
+
 
 
 
@@ -254,14 +317,6 @@ class URDFparser(object):
 					j -= 1
 					H[i,j] = cs.mtimes(Si[j].T, fh)
 					H[j,i] = H[i,j]
-
-			#M = cs.Function("M", [q], [H])
-
-			#M_num = M([0.,0.])
-			#print "M 0.:", M_num
-
-			#M_num2 = M([5.,5.])
-			#print "M 5:", M_num2
 
 
 			#for i in range(n_joints-1, -1, -1):
@@ -405,14 +460,7 @@ class URDFparser(object):
 			if i is not 0:
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
-		# For numerical verification:
-		#C2 = cs.Function("C", [q, q_dot], [C])
 
-		#C_num0 = C2([0.1, 0.1], [0.1, 0.1])
-		#print "numerical tau with zeros as input:", (C_num0)
-
-		#C_num5 = C2([5., 5.], [5., 5.])
-		#print "numerical tau with fives as input:", (C_num5)
 
 		return C
 
@@ -549,7 +597,7 @@ class URDFparser(object):
 			f = self._apply_external_forces(f_ext, f, i_X_0)
 
 		for i in range(n_joints-1, -1, -1):
-			tau[i] = -cs.mtimes(Si[i].T, f[i])
+			tau[i] = cs.mtimes(Si[i].T, f[i])
 
 			if i is not 0:
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
@@ -577,21 +625,14 @@ class URDFparser(object):
 			q_ddot = cs.SX.zeros(n_joints)
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
 			Ic = self.get_spatial_inertias(root, tip)
-			#print "spatial inertias before M and C:", Ic, "\n"
 
 			H = self._get_H(Ic, i_X_p, Si, n_joints, q)
-			#print "spatial inertias after M:", Ic, "\n"
 
-			#print "H:", H, "\n"
-			#print  "\n"
 			H_inv = cs.solve(H, cs.SX.eye(H.size1()))
-			#print "H_inv:", H_inv, "\n"
-			#print  "\n"
+
 			C = self._get_C(joint_list, i_X_p, Si, Ic, q, q_dot, n_joints)
-			#print "C:", C, "\n"
-			#print  "\n"
+
 			q_ddot = cs.mtimes(H_inv, (tau - C))
-			#print "q_ddot:", q_ddot, "\n"
 
 
 			q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot])
