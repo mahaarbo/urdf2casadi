@@ -18,7 +18,7 @@ def inertia_matrix(I):
     """Returns the inertia matrix given the inertia vector """
     return np.array([I[0], I[1], I[2]], [I[1], I[3], I[4]], [I[2], I[4], I[5]])
 
-#must be verified - check
+
 def motion_cross_product(v):
     """Returns the cross product matrix of a spatial vector"""
     mcp = cs.SX.zeros(6, 6)
@@ -46,7 +46,7 @@ def motion_cross_product(v):
 
     return mcp
 
-#must be verified - check
+
 def force_cross_product(v):
     return -motion_cross_product(v).T
 
@@ -62,23 +62,16 @@ def spatial_inertia_matrix_Ic(ixx, ixy, ixz, iyy, iyz, izz, mass):
 
     return Ic
 
-#must be verified - check
+
 def spatial_inertia_matrix_IO(ixx, ixy, ixz, iyy, iyz, izz, mass, c):
     """Returns a spatial inertia matrix expressed at the origin """
     IO = np.zeros([6, 6])
     cx = numpy_skew_symmetric(c)
-    #print "cx: \n", cx, "\n"
     inertia_matrix =np.array([[ixx, -ixy, -ixz], [-ixy, iyy, -iyz], [-ixz, -iyz, izz]])
-    #print "3x3 inertia tensor: \n", inertia_matrix, "\n"
-
     IO[:3, :3] = inertia_matrix + mass*(np.dot(cx, np.transpose(cx)))
-    #print "I + (m cx cx^T):\n", IO[:3, :3], "\n"
-
     IO[:3, 3:] = mass*cx
-    #print "mcx: \n", IO[:3, 3:], "\n"
-
     IO[3:, :3] = mass*np.transpose(cx)
-    #print "mcx^T: \n", IO[3:, :3], "\n"
+
 
     IO[3, 3] = mass
     IO[4, 4] = mass
@@ -106,7 +99,6 @@ def spatial_force_transform(R, r):
     X[:3, 3:] = cs.mtimes(cs.skew(r), R.T)
     return X
 
-#fra A til B
 def spatial_transform(R, r):
     X = cs.SX.zeros(6,6)
     X[:3, :3] = R
@@ -115,7 +107,6 @@ def spatial_transform(R, r):
     return X
 
 
-#transform motsatt vei, fra B til A
 def spatial_transform_BA(R, r):
     X = cs.SX.zeros(6,6)
     X[:3, :3] = R.T
@@ -127,9 +118,7 @@ def spatial_transform_BA(R, r):
 def XJXT2(xyz, rpy, axis, qi):
     RT = numpy_rotation_rpy(rpy[0], rpy[1], rpy[2])
     XT = spatial_transform(RT.T, xyz)
-    #print RT
-    #print XT
-        # joint rotation from skew sym axis angle
+
     cqi = cs.cos(qi)
     sqi = cs.sin(qi)
     R = cs.SX.zeros(3, 3)
@@ -161,34 +150,31 @@ def XJXT2(xyz, rpy, axis, qi):
     XJ = cs.SX.zeros(6,6)
     XJ[:3, :3] = R.T
     XJ[3:, 3:] = R.T
-    # print XJ
+
 
     return cs.mtimes(XJ, XT)
 
 
-
-#denne funker for rene rotasjoner, positive og negative. Ikke blandete akser
 def XJT_revolute(xyz, rpy, axis, qi):
     T = tm.revolute(xyz,rpy,axis,qi)
     rotation_matrix = T[:3,:3]
     displacement = T[:3, 3]
-    return spatial_transform_BA(rotation_matrix, displacement)
+    return spatial_transform(rotation_matrix.T, displacement)
 
-#denne funker ikke at all
+
 def XJT_revolute_BA(xyz, rpy, axis, qi):
     T = tm.revolute(xyz,rpy,axis,qi)
     rotation_matrix = T[:3,:3]
     displacement = T[:3, 3]
     return spatial_transform_BA(rotation_matrix, displacement)
 
-#denne burde funke for prismatic, det gjoor den derimot ikke...
 def XJT_prismatic(xyz, rpy, axis, qi):
     T = tm.prismatic(xyz,rpy,axis,qi)
     rotation_matrix = T[:3,:3]
     displacement = T[:3, 3]
-    return spatial_transform(rotation_matrix, displacement)
+    return spatial_transform(rotation_matrix.T, displacement)
 
-#for testing, funker ikke for noe
+
 def XJT_prismatic_BA(xyz, rpy, axis, qi):
     T = tm.prismatic(xyz,rpy,axis,qi)
     rotation_matrix = T[:3,:3]
@@ -196,15 +182,13 @@ def XJT_prismatic_BA(xyz, rpy, axis, qi):
     return spatial_transform_BA(rotation_matrix, displacement)
 
 
-#Helt generell XT, funker i kombinasjon med XJ_revolute_posneg, altsaa at
-# i_X_p = XJ_revolute_posneg*XT i _get_spatial_transforms_and_Si
 def XT(xyz, rpy):
     """Returns a general spatial transformation matrix matrix"""
     rotation_matrix = numpy_rotation_rpy(rpy[0], rpy[1], rpy[2])
     return spatial_transform(rotation_matrix.T, xyz)
 
 
-#denne burde funke sammen med XT men neidaaaa...
+
 def XJ_prismatic(axis, qi):
         """Returns a symbolic spatial translation transformation matrix for prismatic joint"""
         R = np.identity(3)
@@ -217,23 +201,6 @@ def XJ_prismatic_BA(axis, qi):
         r = axis*qi
         return spatial_transform_BA(R, r)
 
-        #X[0, 0] = 1
-        #X[1, 1] = 1
-        #X[2, 2] = 1
-
-        #X[3, 1] = axis[2]*qi
-        #X[3, 2] = -axis[1]*qi
-        #X[4, 0] = -axis[2]*qi
-        #X[4, 2] = axis[0]*qi
-        #X[5, 0] = axis[1]*qi
-        #X[5, 1] = -axis[0]*qi
-
-        #X[3, 3] = 1
-        #X[4, 4] = 1
-        #X[5, 5] = 1
-
-
-#funker ikke slik den er naa, bruker XJ_revolute_posneg
 def XJ_revolute(axis, qi):
     """Returns a symbolic spatial rotation transformation matrix for a revolute joint"""
     X = cs.SX.zeros(6, 6)
@@ -304,8 +271,6 @@ def Rz(qi):
 
     return Rz
 
-
-#funker for positive og negative 1-rotasjonsakser
 def XJ_revolute_posneg(axis, qi):
     """Returns a symbolic spatial rotation transformation matrix for a revolute joint"""
     X = cs.SX.zeros(6, 6)
@@ -348,26 +313,7 @@ def XJ_revolute_posneg(axis, qi):
 
         return Rz
 
-    #print axis
-
-    #print Rx(axis[0])
-    #print Ry(axis[1])
-    #print Rz(axis[2])
-
     R = cs.mtimes(Rx(axis[0]), cs.mtimes(Ry(axis[1]), Rz(axis[2])))
-
-    #if axis[0] is 1.0: #or axis[0] is -1.0:
-    #    R = Rx(axis[0])
-
-    #elif axis[1] is 1: #or (axis[1] is -1.0):
-    #    R = Ry(axis[1])
-
-    #elif axis[1] is -1.0:
-    #    print "lalala"
-    #    R = Ry(axis[1])
-
-    #elif axis[2] is 1: #or axis[2] is -1.0:
-    #    R = Rz(axis[2])
 
     X[:3, :3] = R.T
     X[3:, 3:] = R.T

@@ -21,12 +21,10 @@ class URDFparser(object):
 		"""Uses an URDF file to get robot description"""
 		print filename
 		self.robot_desc = URDF.from_xml_file(filename)
-		#self.chain_list = robot_desc.get_chain(root, tip)
 
 	def from_server(self, key="robot_description"):
 		"""Uses a parameter server to get robot description"""
 		self.robot_desc = URDF.from_parameter_server(key=key)
-        #self.chain_list = robot_desc.get_chain(root, tip)
 
 	def from_string(self, urdfstring):
 		"""Uses a string to get robot description"""
@@ -89,7 +87,6 @@ class URDFparser(object):
 						joint.origin.xyz = [0., 0., 0.]
 					elif joint.origin.rpy is None:
 						joint.origin.rpy = [0., 0., 0.]
-
 		return joint_list
 
 
@@ -101,11 +98,8 @@ class URDFparser(object):
 		spatial_inertias = []
 
 		for item in chain:
-			#Assuming here that root is always a base link, is this a reasonable assumption?
-			#Could also just use spatial_inertias[i+1] in algorithm iterations
 			if item in self.robot_desc.link_map:
 				link = self.robot_desc.link_map[item]
-				#print link.name
 				if link.inertial is None:
 					spatial_inertia = np.zeros((6, 6))
 				else:
@@ -122,35 +116,23 @@ class URDFparser(object):
 		i_X_0 = []
 		i_X_p = []
 		Sis = []
-		#Si = cs.SX.zeros(6,1)
 		i = 0
 
 		for joint in joint_list:
 			XT = plucker.XT(joint.origin.xyz, joint.origin.rpy)
 			if joint.type == "fixed":
-				XJ = plucker.XT(joint.origin.xyz, joint.origin.rpy)
+				XJT = plucker.XT(joint.origin.xyz, joint.origin.rpy)
 
 			elif joint.type == "prismatic":
-				XJ = plucker.XJ_prismatic(joint.axis, q[i])
+				XJT = plucker.XJT_prismatic(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 				Si = cs.SX([0, 0, 0, joint.axis[0], joint.axis[1], joint.axis[2]])
 
 			elif joint.type in ["revolute", "continuous"]:
-				XJ = plucker.XJ_revolute_posneg(joint.axis, q[i])
-				#XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
-				XJT = plucker.XJXT2(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
-				XJTfunc = cs.Function("XJTfunc", [q], [XJT])
-				XJXT1num = XJTfunc([0])
-				#print XJXT1num
-
-
+				XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 				Si = cs.SX([joint.axis[0], joint.axis[1], joint.axis[2], 0, 0, 0])
-				#print Si
-			#i_X_p.append(cs.mtimes(XJ, XT))
-            #plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i]))
+
 			i_X_p.append(XJT)
 			Sis.append(Si)
-
-
 
 			if(i == 0):
 				i_X_0.append(i_X_p[i])
@@ -165,7 +147,6 @@ class URDFparser(object):
 
 	def _apply_external_forces(external_f, f, i_X_0):
 		for i in range(0, len(f)):
-			#i_X_0[i] = inv(i_X_0.T)
 			f[i] -= cs.mtimes(i_X_0[i], external_f[i])
 		return f
 
