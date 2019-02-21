@@ -331,6 +331,8 @@ class URDFparser(object):
 			#		H[i,j] = cs.mtimes(F.T, Si[j])
 			#		H[j,i] = H[i,j]
 
+		
+
 			return H
 
 	def get_jointspace_inertia_matrix(self, root, tip):
@@ -407,42 +409,27 @@ class URDFparser(object):
 			return H
 
 
-	def _get_C(self, joint_list, i_X_p, Si, Ic, q, q_dot, n_joints, f_ext = None):
+	def _get_C(self, joint_list, i_X_p, Si, Ic, q, q_dot, n_joints, gravity = None, f_ext = None):
 		"""Returns the joint space bias matrix aka the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot,fx)"""
-		#print "v", i, ":", v[i], "\n"
-		#print "a", i, ":", a[i], "\n"
-		#print "f", i, ":", f[i], "\n"
-		#joint_list = self._get_joint_list(root, tip)
-		#n_joints = len(joint_list)
-		#q = cs.SX.sym("q", n_joints)
-		#q_dot = cs.SX.sym("q_dot", n_joints)
-
-		#i_X_p, i_X_0, Si = self._sforms_and_Si(q, joint_list)
-		#Ic = self.get_spatial_inertias(root, tip)
 
 		v = []
 		a = []
-		#f = cs.SX.zeros(n_bodies-1)
 		f = []
 		C = cs.SX.zeros(n_joints)
 		v0 = cs.SX.zeros(6,1)
 		a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
 		for i in range(0, n_joints):
-			#OBS! Boor legge denne i jcalc slik at denne ikke er avhengig av jointtype
-			#if (joint_list[i].type == "fixed"):
-			#	if(i is 0):
-			#		v.append(v0)
-			#		a.append(cs.mtimes(i_X_p[i], -a_gravity))
-			#	else:
-			#		v.append(cs.mtimes(i_X_p[i], v[i-1]))
-			#		a.append(cs.mtimes(i_X_p[i], a[i-1]))
-			#else:
+
 			vJ = cs.mtimes(Si[i],q_dot[i])
 
 			if(i is 0):
 				v.append(vJ)
-				a.append(cs.SX([0., 0., 0., 0., 0., 0.]))
+				if gravity is not None:
+					ag = cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]])
+					a.append(cs.mtimes(i_X_p[i], -ag))
+				else:
+					a.append(cs.mtimes(Si[i],q_ddot[i]))
 
 
 			else:
@@ -455,7 +442,7 @@ class URDFparser(object):
 			f = self._apply_external_forces(f_ext, f, i_X_0)
 
 		for i in range(n_joints-1, -1, -1):
-			C[i] = -cs.mtimes(Si[i].T, f[i])
+			C[i] = cs.mtimes(Si[i].T, f[i])
 
 			if i is not 0:
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
@@ -465,86 +452,7 @@ class URDFparser(object):
 		return C
 
 
-	def get_inverse_dynamics_RNEA_test(self, root, tip, f_ext = None):
-		"""Calculates and returns the casadi inverse dynamics, aka tau, using RNEA"""
 
-		if self.robot_desc is None:
-			raise ValueError('Robot description not loaded from urdf')
-
-		joint_list = self._get_joint_list(root, tip)
-		n_joints = len(joint_list)
-		q = cs.SX.sym("q", n_joints)
-		q_dot = cs.SX.sym("q_dot", n_joints)
-		#q_ddot = cs.SX.sym("q_ddot", n_joints)
-		i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
-		Ic = self.get_spatial_inertias(root, tip)
-
-
-		#declarations:
-		v0 = cs.SX.zeros(6,1)
-		a0 = cs.SX.zeros(6,1)
-
-		v0 = cs.SX.zeros(6,1)
-		a0 = cs.SX.zeros(6,1)
-
-		f0 = cs.SX.zeros(6,1)
-		f0 = cs.SX.zeros(6,1)
-
-		tau = cs.SX.zeros(n_joints)
-
-
-		#iteration 0:
-		vJ0 = cs.mtimes(Si[0],q_dot[0])
-		v0 = vJ0
-		#dobbeltsjekke dette:
-		a0 = vJ0
-		f0 = (cs.mtimes(Ic[0], a0) + cs.mtimes(plucker.motion_cross_product(-v0), cs.mtimes(Ic[0], v0)))
-
-		#iteration 1:
-		vJ1 = cs.mtimes(Si[1], q_dot[1])
-		v1 = cs.mtimes(i_X_p[1], v0) + vJ1
-		a1 = cs.mtimes(i_X_p[1], a0) + cs.mtimes(plucker.motion_cross_product(-v1),vJ1)
-		f1 = cs.mtimes(Ic[1], a1) + cs.mtimes(plucker.motion_cross_product(-v1), cs.mtimes(Ic[1], v1))
-
-		#tau:
-		tau[0] = cs.mtimes(Si[0].T, f0)
-		tau[1] = cs.mtimes(Si[1].T, f1)
-
-		f0 = cs.Function("f0", [q, q_dot], [f0])
-		v0 = cs.Function("v0", [q, q_dot], [v0])
-		a0 = cs.Function("a0", [q, q_dot], [a0])
-
-		f1 = cs.Function("f1", [q, q_dot], [f1])
-		v1 = cs.Function("v1", [q, q_dot], [v1])
-		a1 = cs.Function("a1", [q, q_dot], [a1])
-
-		tau = cs.Function("tau", [q, q_dot], [tau])
-
-		x = 10.
-		y = 10.
-
-		v0_num = v0([x, x], [0., y])
-		print "v0, q, q_dot = 0.5:", (v0_num), "\n"
-
-		a0_num = a0([x, x], [0., y])
-		print "a0, q, q_dot = 0.5:", (a0_num), "\n"
-
-		f0_num = f0([x, x], [0.0, y])
-		print "f0, q, q_dot = 0.5:", (f0_num), "\n"
-
-
-
-		v1_num = v1([x, x], [0., y])
-		print "v1, q, q_dot = 0.5:", (v1_num), "\n"
-
-		a1_num = a1([x, x], [0., y])
-		print "a1, q, q_dot = 0.5:", (a1_num), "\n"
-
-		f1_num = f1([x, x], [0., y])
-		print "f1, q, q_dot = 0.5:", (f1_num), "\n"
-
-		tau_num = tau([x, x], [0., y])
-		print "tau, q, q_dot = 0.5:", (tau_num), "\n"
 
 
 	def get_jointspace_bias_matrix(self, root, tip, f_ext = None):
@@ -612,8 +520,8 @@ class URDFparser(object):
 
 
 
-	def get_forward_dynamics_CRBA(self, root, tip, tau):
-			"""Returns the casadi forward dynamics using one of the inertia matrix method - composite rigid body algorithm"""
+	def get_forward_dynamics_CRBA(self, root, tip, tau, gravity = None, f_ext = None):
+			"""Returns the casadi forward dynamics using the composite rigid body algorithm"""
 
 			if self.robot_desc is None:
 				raise ValueError('Robot description not loaded from urdf')
@@ -625,16 +533,10 @@ class URDFparser(object):
 			q_ddot = cs.SX.zeros(n_joints)
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
 			Ic = self.get_spatial_inertias(root, tip)
-
 			H = self._get_H(Ic, i_X_p, Si, n_joints, q)
-
 			H_inv = cs.solve(H, cs.SX.eye(H.size1()))
-
-			C = self._get_C(joint_list, i_X_p, Si, Ic, q, q_dot, n_joints)
-
+			C = self._get_C(joint_list, i_X_p, Si, Ic, q, q_dot, n_joints, gravity, f_ext)
 			q_ddot = cs.mtimes(H_inv, (tau - C))
-
-
 			q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot])
 			return q_ddot
 

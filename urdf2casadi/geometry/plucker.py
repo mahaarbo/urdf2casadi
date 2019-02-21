@@ -127,9 +127,7 @@ def spatial_transform_BA(R, r):
 def XJXT2(xyz, rpy, axis, qi):
     RT = numpy_rotation_rpy(rpy[0], rpy[1], rpy[2])
     XT = spatial_transform(RT.T, xyz)
-    #print RT
-    #print XT
-        # joint rotation from skew sym axis angle
+
     cqi = cs.cos(qi)
     sqi = cs.sin(qi)
     R = cs.SX.zeros(3, 3)
@@ -161,7 +159,6 @@ def XJXT2(xyz, rpy, axis, qi):
     XJ = cs.SX.zeros(6,6)
     XJ[:3, :3] = R.T
     XJ[3:, 3:] = R.T
-    # print XJ
 
     return cs.mtimes(XJ, XT)
 
