@@ -75,11 +75,14 @@ class URDFparser(object):
 
 		chain = self.robot_desc.get_chain(root, tip)
 		joint_list = []
+		actuated = 0
+
 		for item in chain:
 			if item in self.robot_desc.joint_map:
 				joint = self.robot_desc.joint_map[item]
 				joint_list += [joint]
-				if joint.type in self.actuated_types:
+				if (joint.type in self.actuated_types):
+					actuated += 1
 					if joint.axis is None:
 						joint.axis = [1., 0., 0.]
 					if joint.origin is None:
@@ -90,7 +93,7 @@ class URDFparser(object):
 					elif joint.origin.rpy is None:
 						joint.origin.rpy = [0., 0., 0.]
 
-		return joint_list
+		return joint_list, actuated
 
 
 	def get_spatial_inertias(self, root, tip):
@@ -124,35 +127,42 @@ class URDFparser(object):
 		Sis = []
 		#Si = cs.SX.zeros(6,1)
 		i = 0
+		prev_type = None
 
 		for joint in joint_list:
-			XT = plucker.XT(joint.origin.xyz, joint.origin.rpy)
 			if joint.type == "fixed":
-				XJ = plucker.XT(joint.origin.xyz, joint.origin.rpy)
+				if prev_type is "fixed":
+					XJT_prev = cs.mtimes(XJT_prev, plucker.XT(joint.origin.xyz, joint.origin.rpy))
+				else:
+					XJT_prev = plucker.XT(joint.origin.xyz, joint.origin.rpy)
+
 
 			elif joint.type == "prismatic":
-				XJ = plucker.XJ_prismatic(joint.axis, q[i])
+				XJT = plucker.XJT_prismatic(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 				Si = cs.SX([0, 0, 0, joint.axis[0], joint.axis[1], joint.axis[2]])
 
 			elif joint.type in ["revolute", "continuous"]:
-				XJ = plucker.XJ_revolute_posneg(joint.axis, q[i])
-				#XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
-				XJT = plucker.XJXT2(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
-				XJTfunc = cs.Function("XJTfunc", [q], [XJT])
-				XJXT1num = XJTfunc([0])
-				#print XJXT1num
-
-
+				XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 				Si = cs.SX([joint.axis[0], joint.axis[1], joint.axis[2], 0, 0, 0])
-				#print Si
-			#i_X_p.append(cs.mtimes(XJ, XT))
-            #plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i]))
-			i_X_p.append(XJT)
-			Sis.append(Si)
 
 
 
-			if(i == 0):
+			if (prev_type is "fixed") and (joint.type is not "fixed"):
+				print "transform over fixed joint check!"
+				XJT = cs.mtimes(XJT_prev, XJT)
+
+			if joint.type is not "fixed":
+				i_X_p.append(XJT)
+				Sis.append(Si)
+
+
+
+			prev_type = joint.type
+
+
+
+
+			if(i == 0 and (joint.type is not "fixed")):
 				i_X_0.append(i_X_p[i])
 
 			else:
@@ -178,8 +188,7 @@ class URDFparser(object):
 		if self.robot_desc is None:
 			raise ValueError('Robot description not loaded from urdf')
 
-		joint_list = self._get_joint_list(root, tip)
-		n_joints = len(joint_list)
+		joint_list, n_joints = self._get_joint_list(root, tip)
 		q = cs.SX.sym("q", n_joints)
 		q_dot = cs.SX.sym("q_dot", n_joints)
 		q_ddot = cs.SX.sym("q_ddot", n_joints)
@@ -241,11 +250,13 @@ class URDFparser(object):
 		if self.robot_desc is None:
 			raise ValueError('Robot description not loaded from urdf')
 
-		joint_list = self._get_joint_list(root, tip)
-		n_joints = len(joint_list)
+		joint_list, n_joints = self._get_joint_list(root, tip)
 		q = cs.SX.sym("q", n_joints)
 		i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
 		Ic = self.get_spatial_inertias(root, tip)
+
+		if (len(i_X_p) is not n_joints) or (len(i_X_0) is not n_joints) or (len(Si) is not n_joints) or (len(Ic) is not n_joints):
+			raise ValueError('Transform/inertia/jointspace mismatch')
 
 
 		v = []
@@ -331,7 +342,7 @@ class URDFparser(object):
 			#		H[i,j] = cs.mtimes(F.T, Si[j])
 			#		H[j,i] = H[i,j]
 
-		
+
 
 			return H
 
@@ -341,24 +352,23 @@ class URDFparser(object):
 				raise ValueError('Robot description not loaded from urdf')
 
 
-			joint_list = self._get_joint_list(root, tip)
+			joint_list, n_joints = self._get_joint_list(root, tip)
 			Ic = self.get_spatial_inertias(root, tip)
-			n_bodies = len(Ic)
-			q = cs.SX.sym("q", n_bodies)
+			q = cs.SX.sym("q", n_joints)
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
 
-			H = cs.SX.zeros(n_bodies, n_bodies)
+			H = cs.SX.zeros(n_joints, n_joints)
 			Ic_composite = [None]*len(Ic)
 
-			for i in range(0, n_bodies):
+			for i in range(0, n_joints):
 				Ic_composite[i] = Ic[i]
 
-			for i in range(n_bodies-1, -1, -1):
+			for i in range(n_joints-1, -1, -1):
 				if i is not 0:
 					Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
 
 
-			for i in range(0, n_bodies):
+			for i in range(0, n_joints):
 				fh = cs.mtimes(Ic_composite[i], Si[i])
 				H[i, i] = cs.mtimes(Si[i].T, fh)
 				j = i
@@ -379,23 +389,22 @@ class URDFparser(object):
 				raise ValueError('Robot description not loaded from urdf')
 
 
-			joint_list = self._get_joint_list(root, tip)
+			joint_list, n_joints = self._get_joint_list(root, tip)
 			Ic = self.get_spatial_inertias(root, tip)
-			n_bodies = len(Ic)
-			q = cs.SX.sym("q", n_bodies)
+			q = cs.SX.sym("q", n_joints)
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
-			H = cs.SX.zeros(n_bodies, n_bodies)
+			H = cs.SX.zeros(n_joints, n_joints)
 			Ic_composite = [None]*len(Ic)
 
 
-			for i in range(0, n_bodies):
+			for i in range(0, n_joints):
 				Ic_composite[i] = Ic[i]
 
-			for i in range(n_bodies-1, -1, -1):
+			for i in range(n_joints-1, -1, -1):
 				if i is not 0:
 					Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
 
-			for i in range(n_bodies-1, -1, -1):
+			for i in range(n_joints-1, -1, -1):
 				fh = cs.mtimes(Ic_composite[i], Si[i])
 				H[i, i] = cs.mtimes(Si[i].T, fh)
 				j = i
@@ -461,8 +470,7 @@ class URDFparser(object):
 			raise ValueError('Robot description not loaded from urdf')
 
 
-		joint_list = self._get_joint_list(root, tip)
-		n_joints = len(joint_list)
+		joint_list, n_joints = self._get_joint_list(root, tip)
 		q = cs.SX.sym("q", n_joints)
 		q_dot = cs.SX.sym("q_dot", n_joints)
 
@@ -472,28 +480,17 @@ class URDFparser(object):
 
 		v = []
 		a = []
-		#f = cs.SX.zeros(n_bodies-1)
 		f = []
 		tau = cs.SX.zeros(n_joints)
 		v0 = cs.SX.zeros(6,1)
 		a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
 		for i in range(0, n_joints):
-			#OBS! Boor legge denne i jcalc slik at denne ikke er avhengig av jointtype
-			#if (joint_list[i].type == "fixed"):
-			#	if(i is 0):
-			#		v.append(v0)
-			#		a.append(cs.mtimes(i_X_p[i], -a_gravity))
-			#	else:
-			#		v.append(cs.mtimes(i_X_p[i], v[i-1]))
-			#		a.append(cs.mtimes(i_X_p[i], a[i-1]))
-			#else:
 			vJ = cs.mtimes(Si[i],q_dot[i])
 
 			if(i is 0):
 				v.append(vJ)
 				a.append(cs.SX([0., 0., 0., 0., 0., 0.]))
-
 
 			else:
 				v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
@@ -510,10 +507,6 @@ class URDFparser(object):
 			if i is not 0:
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
-		#print "f 0:", f[0][2], "\n"
-
-
-
 
 		C = cs.Function("C", [q, q_dot], [tau])
 		return C
@@ -526,8 +519,7 @@ class URDFparser(object):
 			if self.robot_desc is None:
 				raise ValueError('Robot description not loaded from urdf')
 
-			joint_list = self._get_joint_list(root, tip)
-			n_joints = len(joint_list)
+			joint_list, n_joints = self._get_joint_list(root, tip)
 			q = cs.SX.sym("q", n_joints)
 			q_dot = cs.SX.sym("q_dot", n_joints)
 			q_ddot = cs.SX.zeros(n_joints)
@@ -538,6 +530,7 @@ class URDFparser(object):
 			C = self._get_C(joint_list, i_X_p, Si, Ic, q, q_dot, n_joints, gravity, f_ext)
 			q_ddot = cs.mtimes(H_inv, (tau - C))
 			q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot])
+
 			return q_ddot
 
 
@@ -548,8 +541,7 @@ class URDFparser(object):
 		if self.robot_desc is None:
 			raise ValueError('Robot description not loaded from urdf')
 
-		joint_list = self._get_joint_list(root, tip)
-		n_joints = len(joint_list)
+		joint_list, n_joints = self._get_joint_list(root, tip)
 		q = cs.SX.sym("q", n_joints)
 		q_dot = cs.SX.sym("q_dot", n_joints)
 		q_ddot = cs.SX.zeros(n_joints)
