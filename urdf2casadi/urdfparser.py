@@ -75,14 +75,14 @@ class URDFparser(object):
 
 		chain = self.robot_desc.get_chain(root, tip)
 		joint_list = []
-		actuated = 0
+		n_actuated = 0
 
 		for item in chain:
 			if item in self.robot_desc.joint_map:
 				joint = self.robot_desc.joint_map[item]
 				joint_list += [joint]
 				if (joint.type in self.actuated_types):
-					actuated += 1
+					n_actuated += 1
 					if joint.axis is None:
 						joint.axis = [1., 0., 0.]
 					if joint.origin is None:
@@ -93,7 +93,7 @@ class URDFparser(object):
 					elif joint.origin.rpy is None:
 						joint.origin.rpy = [0., 0., 0.]
 
-		return joint_list, actuated
+		return joint_list, n_actuated
 
 
 	def get_spatial_inertias(self, root, tip):
@@ -119,6 +119,50 @@ class URDFparser(object):
 		spatial_inertias.pop(0)
 		return spatial_inertias
 
+	def get_spatial_inertias2(self, root, tip):
+		if self.robot_desc is None:
+			raise ValueError('Robot description not loaded from urdf')
+
+		chain = self.robot_desc.get_chain(root, tip)
+		spatial_inertias = []
+		n_bodies = (len(chain)-1)/2
+		prev_joint = None
+		body_i = 0
+		for item in chain:
+			#Assuming here that root is always a base link, is this a reasonable assumption?
+			#Could also just use spatial_inertias[i+1] in algorithm iterations
+			if item in self.robot_desc.joint_map:
+				joint = self.robot_desc.joint_map[item]
+				if (joint.type == "fixed") and (body_i is not 1):
+					print "constructing first of fixed inertia"
+					prev_inertia = spatial_inertia
+				elif body_i is not 1 and (joint.type != "fixed"):
+					spatial_inertias.append(spatial_inertia)
+
+				prev_joint = joint.type
+
+			if item in self.robot_desc.link_map:
+				link = self.robot_desc.link_map[item]
+
+
+				if link.inertial is None:
+					spatial_inertia = np.zeros((6, 6))
+				else:
+					I = link.inertial.inertia
+					spatial_inertia = plucker.spatial_inertia_matrix_IO(I.ixx, I.ixy, I.ixz, I.iyy, I.iyz, I.izz, link.inertial.mass, link.inertial.origin.xyz)
+
+				if prev_joint == "fixed" and (body_i is not 0):
+					print "adding fixed inertia to new inertia"
+					spatial_inertia += prev_inertia
+
+				if body_i is n_bodies:
+					spatial_inertias.append(spatial_inertia)
+				body_i += 1
+
+
+
+		return spatial_inertias
+
 
 	def _get_spatial_transforms_and_Si(self, q, joint_list):
 		"""Helper function which calculates spatial transform matrices and motion subspace matrices"""
@@ -131,8 +175,9 @@ class URDFparser(object):
 
 		for joint in joint_list:
 			if joint.type == "fixed":
-				if prev_type is "fixed":
-					XJT_prev = cs.mtimes(XJT_prev, plucker.XT(joint.origin.xyz, joint.origin.rpy))
+				print "handeling fixed joint"
+				if prev_type == "fixed":
+					XJT_prev = cs.mtimes(plucker.XT(joint.origin.xyz, joint.origin.rpy), XJT_prev)
 				else:
 					XJT_prev = plucker.XT(joint.origin.xyz, joint.origin.rpy)
 
@@ -140,19 +185,21 @@ class URDFparser(object):
 			elif joint.type == "prismatic":
 				XJT = plucker.XJT_prismatic(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 				Si = cs.SX([0, 0, 0, joint.axis[0], joint.axis[1], joint.axis[2]])
+				i += 1
 
 			elif joint.type in ["revolute", "continuous"]:
 				XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
 				Si = cs.SX([joint.axis[0], joint.axis[1], joint.axis[2], 0, 0, 0])
+				i += 1
 
 
 
-			if (prev_type is "fixed") and (joint.type is not "fixed"):
-				print "transform over fixed joint check!"
-				XJT = cs.mtimes(XJT_prev, XJT)
+			if (prev_type == "fixed") and (joint.type != "fixed"):
+				XJT = cs.mtimes(XJT, XJT_prev)
 
-			if joint.type is not "fixed":
+			if joint.type != "fixed":
 				i_X_p.append(XJT)
+				#i_X_0.append(cs.mtimes(i_X_p[i], i_X_0[i-1]))
 				Sis.append(Si)
 
 
@@ -161,13 +208,11 @@ class URDFparser(object):
 
 
 
+			#obs! must implement for special case of fixed after i=0
+			#if(i == 0 and (joint.type != "fixed")):
+				#i_X_0.append(i_X_p[i])
 
-			if(i == 0 and (joint.type is not "fixed")):
-				i_X_0.append(i_X_p[i])
 
-			else:
-				i_X_0.append(cs.mtimes(i_X_p[i], i_X_0[i-1]))
-			i += 1
 
 		return i_X_p, i_X_0, Sis
 
@@ -178,6 +223,7 @@ class URDFparser(object):
 			#i_X_0[i] = inv(i_X_0.T)
 			f[i] -= cs.mtimes(i_X_0[i], external_f[i])
 		return f
+
 
 
 
@@ -193,7 +239,7 @@ class URDFparser(object):
 		q_dot = cs.SX.sym("q_dot", n_joints)
 		q_ddot = cs.SX.sym("q_ddot", n_joints)
 		i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
-		Ic = self.get_spatial_inertias(root, tip)
+		Ic = self.get_spatial_inertias2(root, tip)
 
 		v = []
 		a = []
@@ -353,9 +399,14 @@ class URDFparser(object):
 
 
 			joint_list, n_joints = self._get_joint_list(root, tip)
-			Ic = self.get_spatial_inertias(root, tip)
+			#print "n_joints:", n_joints
+			Ic = self.get_spatial_inertias2(root, tip)
+			#print "n inertias:", len(Ic)
 			q = cs.SX.sym("q", n_joints)
+			#print "n q:", len(q)
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
+			#print "n_transforms:", len(i_X_p)
+			#print "n S:", len(Si)
 
 			H = cs.SX.zeros(n_joints, n_joints)
 			Ic_composite = [None]*len(Ic)
@@ -373,6 +424,7 @@ class URDFparser(object):
 				H[i, i] = cs.mtimes(Si[i].T, fh)
 				j = i
 				while j is not 0:
+					print "j that is used in transform:", j
 					fh = cs.mtimes(i_X_p[j].T, fh)
 					j -= 1
 					H[i,j] = cs.mtimes(Si[j].T, fh)
@@ -390,7 +442,7 @@ class URDFparser(object):
 
 
 			joint_list, n_joints = self._get_joint_list(root, tip)
-			Ic = self.get_spatial_inertias(root, tip)
+			Ic = self.get_spatial_inertias2(root, tip)
 			q = cs.SX.sym("q", n_joints)
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
 			H = cs.SX.zeros(n_joints, n_joints)
@@ -438,7 +490,7 @@ class URDFparser(object):
 					ag = cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]])
 					a.append(cs.mtimes(i_X_p[i], -ag))
 				else:
-					a.append(cs.mtimes(Si[i],q_ddot[i]))
+					a.append(cs.mtimes(Si[i],q_dot[i]))
 
 
 			else:
@@ -475,7 +527,7 @@ class URDFparser(object):
 		q_dot = cs.SX.sym("q_dot", n_joints)
 
 		i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
-		Ic = self.get_spatial_inertias(root, tip)
+		Ic = self.get_spatial_inertias2(root, tip)
 
 
 		v = []
@@ -535,7 +587,7 @@ class URDFparser(object):
 
 
 
-	def get_forward_dynamics_ABA(self, root, tip, tau, f_ext = None):
+	def get_forward_dynamics_ABA(self, root, tip, tau, gravity = None, f_ext = None):
 		"""Returns the casadi forward dynamics using the inertia articulated rigid body algorithm"""
 
 		if self.robot_desc is None:
@@ -562,57 +614,86 @@ class URDFparser(object):
 		zeros = cs.SX.zeros(6)
 
 		for i in range(0, n_joints):
-			if (joint_list[i].type == "fixed"):
-				if((i-1) is -1):
-					v.append(zeros)
-					c.append(zeros)
-				else:
-					v.append(cs.mtimes(i_X_p[i], v[i-1]))
-					c.append(cs.mtimes(plucker.motion_cross_product(v[i]), vJ))
-
+			vJ = cs.mtimes(Si[i], q_dot[i])
+			if i is 0:
+				#v0 = S*qdot0 = [0, qdot0, 0, 0, 0, 0] = [0, 1, 0, 0, 0, 0]
+				v.append(vJ)
+				c.append(cs.SX.zeros(6))
+				#c0 = [0, 0, 0, 0, 0, 0]
 			else:
-				vJ = cs.mtimes(Si[i], q_dot[i])
-				if i is 0:
-					v.append(vJ)
-					c.append(cs.SX.zeros(6))
-				else:
-					v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
-					c.append(cs.mtimes(plucker.motion_cross_product(v[i]), vJ))
+				v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
+				c.append(cs.mtimes(plucker.motion_cross_product(v[i]), vJ))
 
 			IA.append(Ic[i])
 			pA.append(cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))
+			#pA = force_cross_product([0, 1, 0, 0, 0, 0])*(Ic * [0, 1, 0, 0, 0, 0])
+			#   = force_cross_product([0, 1 , 0, 0, 0, 0])*[0, 0.0102675, 0, 0, 0, 0] = 0
+			#-------> pA[0] = 0 0 0 0 0 0
+
+		#print "IA:", IA
+		#print IA[0]
+		#print "pA:", pA[0]
 
 		if f_ext is not None:
 			pA = self._apply_external_forces(f_ext, pA)
 
 		for i in range(n_joints-1, -1, -1):
-			#U[:6,i] = cs.mtimes(Ic[i], Si[i])#6x6 * 6x1 = 6x1
-			U[i] = cs.mtimes(IA[i], Si[i])#6x6 * 6x1 = 6x1
-			#d[i] = cs.mtimes(Si[i].T, U[:6,i])#1x6 x 6x1 = 1x1
+			U[i] = cs.mtimes(IA[i], Si[i])
 			d[i] = cs.mtimes(Si[i].T, U[i])
-			u[i] = tau[i] - cs.mtimes(Si[i].T, pA[i]) # 1x1 - 1x6 x 6x1 = 1x1
+			u[i] = tau[i] - cs.mtimes(Si[i].T, pA[i])
 			if i is not 0:
-				Ia = IA[i] - (cs.mtimes(U[i], U[i].T)/d[i])#blir dette ekvivalent med U/d*U.T?
-				pa = pA[i] + cs.mtimes(Ic[i], c[i]) + cs.mtimes(U[i], u[i]/d[i])
+				Ia = IA[i] - ((cs.mtimes(U[i], U[i].T)/d[i]))
+				pa = pA[i] + cs.mtimes(Ia, c[i]) + (cs.mtimes(U[i], u[i])/d[i])
 				IA[i-1] += cs.mtimes(i_X_p[i].T, cs.mtimes(Ia, i_X_p[i]))
 				pA[i-1] += cs.mtimes(i_X_p[i].T, pa)
 
+
+
+
+
+		#print "u:", u
+		#print "d:", d
+		#print "U:", U
+
 		a = []
-		a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
 		for i in range(0, n_joints):
 			if i is 0:
-				a_temp = (cs.mtimes(i_X_p[i], a_gravity) + c[i])#6x1
+				if gravity is not None:
+					ag = cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]])
+					a_temp = (cs.mtimes(i_X_p[i], -ag) + c[i])#6x1
+					#a_temp_func = cs.Function("a_temp", [q, q_dot], [a_temp])
+					#a_temp_func_num = a_temp_func(np.ones(6), np.ones(6))
+					#print "a_temp i = 0:", a_temp_func_num
+				else:
+					a_temp = c[i]
+					#a_temp_func = cs.Function("a_temp", [q, q_dot], [a_temp])
+					#a_temp_func_num = a_temp_func(np.ones(6), np.ones(6))
+
+					#print "c[i] = a temp i = 0:", a_temp_func_num, "if 0 -> qddot = u/d"
+
 			else:
 				a_temp = (cs.mtimes(i_X_p[i], a[i-1]) + c[i])#6x1
+				#a_temp_func = cs.Function("a_temp", [q, q_dot], [a_temp])
+				#a_temp_func_num = a_temp_func(np.ones(6), np.ones(6))
+				#print "a_temp i is not 0:", a_temp_func_num
 
-			if joint_list[i].type is "fixed":
-				a.append(a_temp)
 
-			else:
-				#q_ddot[i] = u[i] - (cs.mtimes(U[:6,i].T, a_temp)/d[i])
-				q_ddot[i] = u[i] - (cs.mtimes(U[i].T, a_temp)/d[i])
-				a.append(a_temp + cs.mtimes(Si[i], q_ddot[i]))#6x1
+			#if joint_list[i].type is "fixed":
+				#a.append(a_temp)
+
+			#q_ddot[i] = u[i] - (cs.mtimes(U[:6,i].T, a_temp)/d[i])
+			q_ddot[i] = (u[i] - cs.mtimes(U[i].T, a_temp))/d[i]
+			#if i is 0:
+				#print alle ledd!
+				#u_func = cs.Function("u", [q, q_dot], [u[i]])
+				#u_func_num = u_func(np.ones(6), np.ones(6))
+				#print "u0:", u_func_num #denne varieres
+				#d_func = cs.Function("d", [q, q_dot], [d[i]])
+				#d_func_num = d_func(np.ones(6), np.ones(6))
+				#print "d0:", d_func_num #konstant
+
+			a.append(a_temp + cs.mtimes(Si[i], q_ddot[i]))#6x1
 
 		q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot])
 		return q_ddot
