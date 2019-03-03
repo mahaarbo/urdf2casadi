@@ -570,6 +570,7 @@ class URDFparser(object):
 					ag = cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]])
 					a.append(cs.mtimes(i_X_p[i], -ag))
 				else:
+					#a.append(cs.mtimes(Si[i],q_ddot[i]))
 					a.append(cs.SX([0., 0., 0., 0., 0., 0.]))
 
 
