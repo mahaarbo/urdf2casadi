@@ -216,6 +216,36 @@ class URDFparser(object):
 
 		return i_X_p, i_X_0, Sis
 
+	def _get_spatial_transforms_and_Si2(self, q, joint_list):
+		"""Helper function which calculates spatial transform matrices and motion subspace matrices"""
+		i_X_0 = []
+		i_X_p = []
+		Sis = []
+		i = 0
+		prev_type = None
+
+		for joint in joint_list:
+			if joint.type == "fixed":
+				XJT = plucker.XT(joint.origin.xyz, joint.origin.rpy)
+				Si = cs.SX([0, 0, 0, 0, 0, 0])
+
+
+			elif joint.type == "prismatic":
+				XJT = plucker.XJT_prismatic(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
+				Si = cs.SX([0, 0, 0, joint.axis[0], joint.axis[1], joint.axis[2]])
+				i += 1
+
+			elif joint.type in ["revolute", "continuous"]:
+				XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
+				Si = cs.SX([joint.axis[0], joint.axis[1], joint.axis[2], 0, 0, 0])
+				i += 1
+
+			i_X_p.append(XJT)
+			Sis.append(Si)
+
+
+		return i_X_p, i_X_0, Sis
+
 
 
 	def _apply_external_forces(external_f, f, i_X_0):
@@ -239,6 +269,7 @@ class URDFparser(object):
 		q_dot = cs.SX.sym("q_dot", n_joints)
 		q_ddot = cs.SX.sym("q_ddot", n_joints)
 		i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
+		print "Si:", Si
 		Ic = self.get_spatial_inertias2(root, tip)
 
 		v = []
@@ -297,12 +328,69 @@ class URDFparser(object):
 			raise ValueError('Robot description not loaded from urdf')
 
 		joint_list, n_joints = self._get_joint_list(root, tip)
+		print "length jlist:", len(joint_list)
+		print "n_joints:", n_joints
 		q = cs.SX.sym("q", n_joints)
 		i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
-		Ic = self.get_spatial_inertias(root, tip)
+		print "len transforms and S:", len(i_X_p), len(Si)
+		Ic = self.get_spatial_inertias2(root, tip)
+		print "len Ic:", len(Ic)
 
-		if (len(i_X_p) is not n_joints) or (len(i_X_0) is not n_joints) or (len(Si) is not n_joints) or (len(Ic) is not n_joints):
-			raise ValueError('Transform/inertia/jointspace mismatch')
+
+
+		v = []
+		a = []
+		ag = cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]])
+		f = []
+		tau = cs.SX.zeros(n_joints)
+
+
+		for i in range(0, n_joints):
+			#if joint_list[i] != "fixed":
+				#if i+1 < n_joints+1:
+					#if joint_list[i+1].type == "fixed":
+						#print "constructing fixed inertia on iteration", i
+						#Ic[i] += Ic[i+1]
+				#if joint_list[i-1].type == "fixed":
+					#i_X_p[i] = cs.mtimes(i_X_p[i-1], i_X_p[i])
+
+
+			if(i is 0):
+				a.append(cs.mtimes(i_X_p[i], -ag))
+
+
+			else:
+				a.append(cs.mtimes(i_X_p[i], a[i-1]))
+			f.append(cs.mtimes(Ic[i], a[i]))
+
+
+		for i in range(n_joints-1, -1, -1):
+			#if joint_list[i] != "fixed":
+				#if joint_list[i-1].type == "fixed":
+					#i_X_p[i] = cs.mtimes(i_X_p[i], i_X_p[i-1])
+
+			tau[i] = cs.mtimes(Si[i].T, f[i])
+
+			if i is not 0:
+				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
+
+
+		tau = cs.Function("C", [q], [tau])
+		return tau
+
+	def get_gravity_RNEA_fixed(self, root, tip, gravity):
+		"""Calculates and returns the casadi inverse dynamics, aka tau, using RNEA"""
+
+		if self.robot_desc is None:
+			raise ValueError('Robot description not loaded from urdf')
+
+		joint_list, n_joints = self._get_joint_list(root, tip)
+		q = cs.SX.sym("q", n_joints)
+		i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
+		Ic = self.get_spatial_inertias2(root, tip)
+
+		#if (len(i_X_p) is not n_joints) or (len(i_X_0) is not n_joints) or (len(Si) is not n_joints) or (len(Ic) is not n_joints):
+			#raise ValueError('Transform/inertia/jointspace mismatch')
 
 
 		v = []
@@ -342,7 +430,6 @@ class URDFparser(object):
 
 		tau = cs.Function("C", [q], [tau])
 		return tau
-
 
 
 
@@ -399,15 +486,9 @@ class URDFparser(object):
 
 
 			joint_list, n_joints = self._get_joint_list(root, tip)
-			#print "n_joints:", n_joints
 			Ic = self.get_spatial_inertias2(root, tip)
-			#print "n inertias:", len(Ic)
 			q = cs.SX.sym("q", n_joints)
-			#print "n q:", len(q)
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
-			#print "n_transforms:", len(i_X_p)
-			#print "n S:", len(Si)
-
 			H = cs.SX.zeros(n_joints, n_joints)
 			Ic_composite = [None]*len(Ic)
 
@@ -418,13 +499,19 @@ class URDFparser(object):
 				if i is not 0:
 					Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
 
-
 			for i in range(0, n_joints):
+				#if joint_list[i] != "fixed":
+					#if i is not n_joints-1:
+						#if joint_list[i+1].type == "fixed":
+							#Ic_composite[i] += Ic_composite[i+1]
+
 				fh = cs.mtimes(Ic_composite[i], Si[i])
 				H[i, i] = cs.mtimes(Si[i].T, fh)
 				j = i
 				while j is not 0:
-					print "j that is used in transform:", j
+					#if joint_list[j].type != "fixed":
+					#if joint_list[j-1].type == "fixed":
+						#i_X_p[j] = cs.mtimes(i_X_p[j], i_X_p[j-1])
 					fh = cs.mtimes(i_X_p[j].T, fh)
 					j -= 1
 					H[i,j] = cs.mtimes(Si[j].T, fh)
