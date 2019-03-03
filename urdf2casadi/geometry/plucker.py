@@ -3,22 +3,20 @@ import numpy as np
 import transformation_matrix as tm
 
 
-
-
-
-
 def numpy_skew_symmetric(v):
     """Returns a skew symmetric matrix from vector. p q r"""
     return np.array([[0, -v[2], v[1]],
                      [v[2], 0, -v[0]],
                      [-v[1], v[0], 0]])
 
-
 def inertia_matrix(I):
     """Returns the inertia matrix given the inertia vector """
     return np.array([I[0], I[1], I[2]], [I[1], I[3], I[4]], [I[2], I[4], I[5]])
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7463f57c6a1857872f4503654cbbd307f6591ccd
 def motion_cross_product(v):
     """Returns the cross product matrix of a spatial vector"""
     mcp = cs.SX.zeros(6, 6)
@@ -68,10 +66,19 @@ def spatial_inertia_matrix_IO(ixx, ixy, ixz, iyy, iyz, izz, mass, c):
     IO = np.zeros([6, 6])
     cx = numpy_skew_symmetric(c)
     inertia_matrix =np.array([[ixx, -ixy, -ixz], [-ixy, iyy, -iyz], [-ixz, -iyz, izz]])
+<<<<<<< HEAD
     IO[:3, :3] = inertia_matrix + mass*(np.dot(cx, np.transpose(cx)))
     IO[:3, 3:] = mass*cx
     IO[3:, :3] = mass*np.transpose(cx)
 
+=======
+
+    IO[:3, :3] = inertia_matrix + mass*(np.dot(cx, np.transpose(cx)))
+
+    IO[:3, 3:] = mass*cx
+
+    IO[3:, :3] = mass*np.transpose(cx)
+>>>>>>> 7463f57c6a1857872f4503654cbbd307f6591ccd
 
     IO[3, 3] = mass
     IO[4, 4] = mass
@@ -99,6 +106,10 @@ def spatial_force_transform(R, r):
     X[:3, 3:] = cs.mtimes(cs.skew(r), R.T)
     return X
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7463f57c6a1857872f4503654cbbd307f6591ccd
 def spatial_transform(R, r):
     X = cs.SX.zeros(6,6)
     X[:3, :3] = R
@@ -154,7 +165,10 @@ def XJXT2(xyz, rpy, axis, qi):
 
     return cs.mtimes(XJ, XT)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7463f57c6a1857872f4503654cbbd307f6591ccd
 def XJT_revolute(xyz, rpy, axis, qi):
     T = tm.revolute(xyz,rpy,axis,qi)
     rotation_matrix = T[:3,:3]
@@ -173,7 +187,10 @@ def XJT_prismatic(xyz, rpy, axis, qi):
     rotation_matrix = T[:3,:3]
     displacement = T[:3, 3]
     return spatial_transform(rotation_matrix.T, displacement)
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7463f57c6a1857872f4503654cbbd307f6591ccd
 
 def XJT_prismatic_BA(xyz, rpy, axis, qi):
     T = tm.prismatic(xyz,rpy,axis,qi)
@@ -187,8 +204,11 @@ def XT(xyz, rpy):
     rotation_matrix = numpy_rotation_rpy(rpy[0], rpy[1], rpy[2])
     return spatial_transform(rotation_matrix.T, xyz)
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 7463f57c6a1857872f4503654cbbd307f6591ccd
 def XJ_prismatic(axis, qi):
         """Returns a symbolic spatial translation transformation matrix for prismatic joint"""
         R = np.identity(3)
@@ -201,6 +221,10 @@ def XJ_prismatic_BA(axis, qi):
         r = axis*qi
         return spatial_transform_BA(R, r)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7463f57c6a1857872f4503654cbbd307f6591ccd
 def XJ_revolute(axis, qi):
     """Returns a symbolic spatial rotation transformation matrix for a revolute joint"""
     X = cs.SX.zeros(6, 6)
@@ -271,6 +295,10 @@ def Rz(qi):
 
     return Rz
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7463f57c6a1857872f4503654cbbd307f6591ccd
 def XJ_revolute_posneg(axis, qi):
     """Returns a symbolic spatial rotation transformation matrix for a revolute joint"""
     X = cs.SX.zeros(6, 6)
@@ -317,91 +345,4 @@ def XJ_revolute_posneg(axis, qi):
 
     X[:3, :3] = R.T
     X[3:, 3:] = R.T
-    return X
-
-def Xrot(axis, qi):
-    X = cs.SX.zeros(6, 6)
-    R = cs.SX.zeros(3, 3)
-    s = cs.sin(qi)
-    c = cs.sin(qi)
-
-    R[0, 0] = axis[0] * axis[0] * (1. - c) + c
-    R[0, 1] = axis[1] * axis[0] * (1. - c) + axis[2] * s
-    R[0, 2] = axis[0] * axis[2] * (1. - c) - axis[1] * s
-
-    R[1, 0] = axis[0] * axis[1] * (1. - c) - axis[2] * s
-    R[1, 1] = axis[1] * axis[1] * (1. - c) + c
-    R[1, 2] = axis[1] * axis[2] * (1. - c) + axis[0] * s
-
-    R[2, 0] = axis[0] * axis[2] * (1. - c) + axis[1] * s
-    R[2, 1] = axis[1] * axis[2] * (1. - c) - axis[0] * s
-    R[2, 2] = axis[2] * axis[2] * (1. - c) + c
-
-    X[:3, :3] = R
-    X[3:, 3:] = R
-    return X
-
-
-#brukes som ledd i XJXT
-def Xrot2(axis, qi):
-    cqi = cs.cos(qi)
-    sqi = cs.sin(qi)
-    R = cs.SX.zeros(3, 3)
-    s00 = (1 - cqi)*axis[0]*axis[0] + cqi
-    s11 = (1 - cqi)*axis[1]*axis[1] + cqi
-    s22 = (1 - cqi)*axis[2]*axis[2] + cqi
-    s01 = (1 - cqi)*axis[0]*axis[1] - axis[2]*sqi
-    s10 = (1 - cqi)*axis[0]*axis[1] + axis[2]*sqi
-    s12 = (1 - cqi)*axis[1]*axis[2] - axis[0]*sqi
-    s21 = (1 - cqi)*axis[1]*axis[2] + axis[0]*sqi
-    s20 = (1 - cqi)*axis[0]*axis[2] - axis[1]*sqi
-    s02 = (1 - cqi)*axis[0]*axis[2] + axis[1]*sqi
-
-    R[0, 0] = s00
-    R[0, 1] = s01
-    R[0, 2] = s02
-
-    R[1, 0] = s10
-    R[1, 1] = s11
-    R[1, 2] = s12
-
-    R[2, 0] = s20
-    R[2, 1] = s21
-    R[2, 2] = s22
-    return R
-
-
-
-#XJXT = XJT_revolute bare at R-delen er delt opp for testing
-def XJXT(xyz, rpy, axis, q):
-    XJ_R = Xrot2(axis, q)
-    XT_R = numpy_rotation_rpy(rpy[0], rpy[1], rpy[2])
-    R = cs.mtimes(XJ_R, XT_R)
-    return spatial_transform(R, xyz)
-
-
-def Xrotkdl(axis, qi):
-
-
-    X = cs.SX.zeros(6, 6)
-    R = cs.SX.zeros(3, 3)
-    s = cs.sin(-qi)
-    c = cs.sin(-qi)
-
-    R[0, 0] = axis[0] * axis[0] * (1. - c) + c
-    R[0, 1] = axis[0] * axis[1] * (1. - c) - axis[2] * s
-    R[0, 2] = axis[0] * axis[2] * (1. - c) + axis[1] * s
-
-
-    R[1, 0] = axis[1] * axis[0] * (1. - c) + axis[2] * s
-    R[1, 1] = axis[1] * axis[1] * (1. - c) + c
-    R[1, 2] = axis[1] * axis[2] * (1. - c) - axis[0] * s
-
-
-    R[2, 0] = axis[0] * axis[2] * (1. - c) - axis[1] * s
-    R[2, 1] = axis[1] * axis[2] * (1. - c) + axis[0] * s
-    R[2, 2] = axis[2] * axis[2] * (1. - c) + c
-
-    X[:3, :3] = R
-    X[3:, 3:] = R
     return X
