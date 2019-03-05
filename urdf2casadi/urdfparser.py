@@ -309,7 +309,7 @@ class URDFparser(object):
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
 
-		tau = cs.Function("C", [q, q_dot, q_ddot], [tau])
+		tau = cs.Function("C", [q, q_dot, q_ddot], [tau], {"jit": True, "jit_options":{"flags":"-Ofast"}})
 		return tau
 
 
@@ -368,7 +368,7 @@ class URDFparser(object):
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
 
-		tau = cs.Function("C", [q], [tau])
+		tau = cs.Function("C", [q], [tau], {"jit": True, "jit_options":{"flags":"-Ofast"}})
 		return tau
 
 	def get_gravity_RNEA_fixed(self, root, tip, gravity):
@@ -421,7 +421,7 @@ class URDFparser(object):
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
 
-		tau = cs.Function("C", [q], [tau])
+		tau = cs.Function("C", [q], [tau], {"jit": True, "jit_options":{"flags":"-Ofast"}})
 		return tau
 
 
@@ -510,7 +510,7 @@ class URDFparser(object):
 					H[i,j] = cs.mtimes(Si[j].T, fh)
 					H[j,i] = H[i,j]
 
-			H = cs.Function("H", [q], [H])
+			H = cs.Function("H", [q], [H], {"jit": True, "jit_options":{"flags":"-Ofast"}})
 			return H
 
 
@@ -546,7 +546,7 @@ class URDFparser(object):
 					H[i,j] = cs.mtimes(Si[j].T, fh)
 					H[j,i] = H[i,j]
 
-			H = cs.Function("H", [q], [H])
+			H = cs.Function("H", [q], [H], {"jit": True, "jit_options":{"flags":"-Ofast"}})
 			return H
 
 
@@ -641,7 +641,7 @@ class URDFparser(object):
 				f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
 
-		C = cs.Function("C", [q, q_dot], [tau])
+		C = cs.Function("C", [q, q_dot], [tau], {"jit": True, "jit_options":{"flags":"-Ofast"}})
 		return C
 
 
@@ -662,7 +662,7 @@ class URDFparser(object):
 			H_inv = cs.solve(H, cs.SX.eye(H.size1()))
 			C = self._get_C(joint_list, i_X_p, Si, Ic, q, q_dot, n_joints, gravity, f_ext)
 			q_ddot = cs.mtimes(H_inv, (tau - C))
-			q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot])
+			q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot], {"jit": True, "jit_options":{"flags":"-Ofast"}})
 
 			return q_ddot
 
@@ -776,7 +776,7 @@ class URDFparser(object):
 
 			a.append(a_temp + cs.mtimes(Si[i], q_ddot[i]))#6x1
 
-		q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot])
+		q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot], {"jit": True, "jit_options":{"flags":"-Ofast"}})
 		return q_ddot
 
 
@@ -848,9 +848,9 @@ class URDFparser(object):
 				dual_quaternion_fk = dual_quaternion.product(dual_quaternion_fk,joint_dual_quat)
 				i += 1
 
-		T_fk = cs.Function("T_fk", [q], [T_fk])
-		quaternion_fk = cs.Function("quaternion_fk", [q], [quaternion_fk])
-		dual_quaternion_fk = cs.Function("dual_quaternion_fk", [q], [dual_quaternion_fk])
+		T_fk = cs.Function("T_fk", [q], [T_fk], {"jit": True, "jit_options":{"flags":"-Ofast"}})
+		quaternion_fk = cs.Function("quaternion_fk", [q], [quaternion_fk], {"jit": True, "jit_options":{"flags":"-Ofast"}})
+		dual_quaternion_fk = cs.Function("dual_quaternion_fk", [q], [dual_quaternion_fk], {"jit": True, "jit_options":{"flags":"-Ofast"}})
 
 		return {
 		    "joint_names": actuated_names,
