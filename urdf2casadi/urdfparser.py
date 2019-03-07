@@ -287,7 +287,7 @@ class URDFparser(object):
 			if(i is 0):
 				v.append(vJ)
 				if gravity is not None:
-					ag = cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]])
+					ag = np.array([0., 0., 0., gravity[0], gravity[1], gravity[2]])
 					a.append(cs.mtimes(i_X_p[i], -ag) + cs.mtimes(Si[i],q_ddot[i]))
 				else:
 					a.append(cs.mtimes(Si[i],q_ddot[i]))
@@ -558,7 +558,7 @@ class URDFparser(object):
 		f = []
 		C = cs.SX.zeros(n_joints)
 		v0 = cs.SX.zeros(6,1)
-		a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
+		#a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
 		for i in range(0, n_joints):
 
@@ -567,7 +567,7 @@ class URDFparser(object):
 			if(i is 0):
 				v.append(vJ)
 				if gravity is not None:
-					ag = cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]])
+					ag = np.array([0., 0., 0., gravity[0], gravity[1], gravity[2]])
 					a.append(cs.mtimes(i_X_p[i], -ag))
 				else:
 					#a.append(cs.mtimes(Si[i],q_ddot[i]))
@@ -615,15 +615,17 @@ class URDFparser(object):
 		a = []
 		f = []
 		tau = cs.SX.zeros(n_joints)
-		v0 = cs.SX.zeros(6,1)
+		#tau = [None]*n_joints
+		#v0 = cs.SX.zeros(6,1)
 
 		for i in range(0, n_joints):
 			vJ = cs.mtimes(Si[i],q_dot[i])
 
 			if(i is 0):
 				v.append(vJ)
-				a.append(cs.SX([0., 0., 0., 0., 0., 0.]))
-
+				#a.append(cs.SX([0., 0., 0., 0., 0., 0.]))
+				a.append(cs.SX.zeros(n_joints))
+				#a.append([0., 0., 0., 0., 0., 0.])
 			else:
 				v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
 				a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(plucker.motion_cross_product(v[i]),vJ))
@@ -703,6 +705,7 @@ class URDFparser(object):
 				#v0 = S*qdot0 = [0, qdot0, 0, 0, 0, 0] = [0, 1, 0, 0, 0, 0]
 				v.append(vJ)
 				c.append([0, 0, 0, 0, 0, 0])
+				#c.append(cs.SX.zeros(n_joints))
 				#c0 = [0, 0, 0, 0, 0, 0]
 			else:
 				v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
@@ -737,7 +740,7 @@ class URDFparser(object):
 		for i in range(0, n_joints):
 			if i is 0:
 				if gravity is not None:
-					ag = cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]])
+					ag = np.array([0., 0., 0., gravity[0], gravity[1], gravity[2]])
 					#ag = [0., 0., 0., gravity[0], gravity[1], gravity[2]]
 					a_temp = (cs.mtimes(i_X_p[i], -ag) + c[i])#6x1
 					#a_temp_func = cs.Function("a_temp", [q, q_dot], [a_temp])
