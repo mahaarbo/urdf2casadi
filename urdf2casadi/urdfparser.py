@@ -655,6 +655,9 @@ class URDFparser(object):
 			q = cs.SX.sym("q", n_joints)
 			q_dot = cs.SX.sym("q_dot", n_joints)
 			q_ddot = cs.SX.zeros(n_joints)
+			#q_ddot = [None]*n_joints
+
+
 			i_X_p, i_X_0, Si = self._get_spatial_transforms_and_Si(q, joint_list)
 			Ic = self.get_spatial_inertias(root, tip)
 			H = self._get_H(Ic, i_X_p, Si, n_joints, q)
@@ -688,17 +691,18 @@ class URDFparser(object):
 		#Which is better if any?
 		#U = cs.SX.zeros(6, n_joints)
 		#d = cs.SX.zeros(1, n_joints)
-		u = cs.SX.zeros(1, n_joints)
+		#u = cs.SX.zeros(1, n_joints)
+		u = [None]*n_joints
 		U = [None]*n_joints
 		d = [None]*n_joints
-		zeros = cs.SX.zeros(6)
+		#zeros = cs.SX.zeros(6)
 
 		for i in range(0, n_joints):
 			vJ = cs.mtimes(Si[i], q_dot[i])
 			if i is 0:
 				#v0 = S*qdot0 = [0, qdot0, 0, 0, 0, 0] = [0, 1, 0, 0, 0, 0]
 				v.append(vJ)
-				c.append(cs.SX.zeros(6))
+				c.append([0, 0, 0, 0, 0, 0])
 				#c0 = [0, 0, 0, 0, 0, 0]
 			else:
 				v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
@@ -728,19 +732,13 @@ class URDFparser(object):
 				pA[i-1] += cs.mtimes(i_X_p[i].T, pa)
 
 
-
-
-
-		#print "u:", u
-		#print "d:", d
-		#print "U:", U
-
 		a = []
 
 		for i in range(0, n_joints):
 			if i is 0:
 				if gravity is not None:
 					ag = cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]])
+					#ag = [0., 0., 0., gravity[0], gravity[1], gravity[2]]
 					a_temp = (cs.mtimes(i_X_p[i], -ag) + c[i])#6x1
 					#a_temp_func = cs.Function("a_temp", [q, q_dot], [a_temp])
 					#a_temp_func_num = a_temp_func(np.ones(6), np.ones(6))
