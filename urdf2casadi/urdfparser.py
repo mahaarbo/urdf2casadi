@@ -616,7 +616,6 @@ class URDFparser(object):
 		f = []
 		tau = cs.SX.zeros(n_joints)
 		v0 = cs.SX.zeros(6,1)
-		a_gravity = cs.SX([0., 0., 0., 0., 0., 0.])
 
 		for i in range(0, n_joints):
 			vJ = cs.mtimes(Si[i],q_dot[i])
