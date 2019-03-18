@@ -534,8 +534,8 @@ class URDFparser(object):
 			if(i is 0):
 				v.append(vJ)
 				if gravity is not None:
-					#ag = np.array([0., 0., 0., gravity[0], gravity[1], gravity[2]])
-					ag = (cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]]))
+					ag = np.array([0., 0., 0., gravity[0], gravity[1], gravity[2]])
+					#ag = (cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]]))
 					a.append(cs.mtimes(i_X_p[i], -ag))
 				else:
 					#a.append(cs.mtimes(Si[i],q_ddot[i]))
