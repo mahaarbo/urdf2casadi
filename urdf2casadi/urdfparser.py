@@ -132,7 +132,7 @@ class URDFparser(object):
 			#Assuming here that root is always a base link, is this a reasonable assumption?
 			if item in self.robot_desc.joint_map:
 				joint = self.robot_desc.joint_map[item]
-				print joint.type
+
 				if joint.type == "fixed":
 					if prev_joint == "fixed":
 						XT_prev = cs.mtimes(plucker.XT(joint.origin.xyz, joint.origin.rpy), XT_prev)
@@ -171,7 +171,7 @@ class URDFparser(object):
 
 			if item in self.robot_desc.link_map:
 				link = self.robot_desc.link_map[item]
-				print link.name
+
 				if link.inertial is None:
 					spatial_inertia = np.zeros((6, 6))
 				else:
@@ -201,7 +201,7 @@ class URDFparser(object):
 			if item in self.robot_desc.joint_map:
 				joint = self.robot_desc.joint_map[item]
 				if (joint.type == "fixed") and (body_i is not 1):
-					print "constructing first of fixed inertia"
+					#print "constructing first of fixed inertia"
 					prev_inertia = spatial_inertia
 				elif body_i is not 1 and (joint.type != "fixed"):
 					spatial_inertias.append(spatial_inertia)
@@ -219,7 +219,7 @@ class URDFparser(object):
 					spatial_inertia = plucker.spatial_inertia_matrix_IO(I.ixx, I.ixy, I.ixz, I.iyy, I.iyz, I.izz, link.inertial.mass, link.inertial.origin.xyz)
 
 				if prev_joint == "fixed" and (body_i is not 0):
-					print "adding fixed inertia to new inertia"
+					#print "adding fixed inertia to new inertia"
 					spatial_inertia = prev_inertia + cs.mtimes(inertia_transform[f].T, cs.mtimes(spatial_inertia, inertia_transform[f]))
 					f += 1
 
@@ -534,8 +534,8 @@ class URDFparser(object):
 			if(i is 0):
 				v.append(vJ)
 				if gravity is not None:
-					ag = np.array([0., 0., 0., gravity[0], gravity[1], gravity[2]])
-					#ag = (cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]]))
+					#ag = np.array([0., 0., 0., gravity[0], gravity[1], gravity[2]])
+					ag = (cs.SX([0., 0., 0., gravity[0], gravity[1], gravity[2]]))
 					a.append(cs.mtimes(i_X_p[i], -ag))
 				else:
 					#a.append(cs.mtimes(Si[i],q_ddot[i]))
