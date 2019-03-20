@@ -17,7 +17,7 @@ REQUIRES_PYTHON = ">=2.7.0"
 VERSION = "0.1.0"
 
 REQUIRED = [
-    "casadi", "numpy", "urdfdom-py"
+    "casadi", "numpy", "urdfdom_py"
 ]
 
 here = os.path.abspath(os.path.dirname(__file__))

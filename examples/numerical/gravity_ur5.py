@@ -1,8 +1,8 @@
 import casadi as cs
 from urdf_parser_py.urdf import URDF, Pose
 import os # For current directory
-import urdf2casadi.urdf2casadi.urdfparser
-import urdf2casadi.urdf2casadi.geometry.plucker as plucker
+import urdf2casadi.urdfparser
+from urdf2casadi.geometry import plucker
 import numpy as np
 import PyKDL as kdl
 import kdl_parser.kdl_parser_py.kdl_parser_py.urdf as kdlurdf
