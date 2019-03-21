@@ -8,7 +8,7 @@
   <link name="base_link">
     <visual>
       <geometry>
-        <mesh filename="package://ur_description/meshes/ur5/visual/base.dae"/>
+        <cylinder length="0.03" radius="0.2"/>
       </geometry>
       <material name="LightGrey">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -16,7 +16,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur_description/meshes/ur5/collision/base.stl"/>
+        <cylinder length="0.03" radius="0.2"/>
       </geometry>
     </collision>
     <inertial>
@@ -36,7 +36,7 @@
   <link name="link1">
     <visual>
       <geometry>
-        <mesh filename="package://ur_description/meshes/ur5/visual/shoulder.dae"/>
+        <cylinder length="0.03" radius="0.2"/>
       </geometry>
       <material name="LightGrey">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -44,7 +44,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ur_description/meshes/ur5/collision/shoulder.stl"/>
+        <cylinder length="0.03" radius="0.2"/>
       </geometry>
     </collision>
     <inertial>
