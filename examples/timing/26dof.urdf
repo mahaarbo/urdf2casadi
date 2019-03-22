@@ -725,12 +725,12 @@
       <inertia ixx="0.0171364731454" ixy="0.0" ixz="0.0" iyy="0.0171364731454" iyz="0.0" izz="0.033822"/>
     </inertial>
   </link>
-  <joint name="shoulder_pan_joint5" type="revolute">
+  <joint name="wrist_3_joint42" type="revolute">
     <parent link="link25"/>
     <child link="link26"/>
-    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.089159"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="150.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.15"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.09465"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="28.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.2"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <link name="link26">
@@ -748,9 +748,9 @@
       </geometry>
     </collision>
     <inertial>
-      <mass value="3.7"/>
+      <mass value="0.1879"/>
       <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
-      <inertia ixx="0.010267495893" ixy="0.0" ixz="0.0" iyy="0.010267495893" iyz="0.0" izz="0.00666"/>
+      <inertia ixx="0.0171364731454" ixy="0.0" ixz="0.0" iyy="0.0171364731454" iyz="0.0" izz="0.033822"/>
     </inertial>
   </link>
 </robot>
