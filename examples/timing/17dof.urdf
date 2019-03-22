@@ -473,7 +473,7 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_2_joint3" type="revolute">
+  <joint name="wrist_2_joint32" type="revolute">
     <parent link="link16"/>
     <child link="link17"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.093 0.0"/>

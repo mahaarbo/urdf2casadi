@@ -473,7 +473,7 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_2_joint3" type="revolute">
+  <joint name="wrist_2_joint32" type="revolute">
     <parent link="link16"/>
     <child link="link17"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.093 0.0"/>
@@ -585,7 +585,7 @@
       <inertia ixx="0.22689067591" ixy="0.0" ixz="0.0" iyy="0.22689067591" iyz="0.0" izz="0.0151074"/>
     </inertial>
   </link>
-  <joint name="shoulder_lift_joint4" type="revolute">
+  <joint name="shoulder_lift_joint42" type="revolute">
     <parent link="link20"/>
     <child link="link21"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.13585 0.0"/>
