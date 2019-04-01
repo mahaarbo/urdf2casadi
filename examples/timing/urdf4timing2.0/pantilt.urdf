@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<robot name="pan_tilt">
+
+  <link name="base_link">
+
+    <visual>
+      <geometry>
+	<cylinder length="0.01" radius="0.2"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <material name="yellow">
+        <color rgba="1 1 0 1"/>
+      </material>
+    </visual>
+
+    <collision>
+      <geometry>
+	<cylinder length="0.03" radius="0.2"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </collision>
+    <inertial>
+	<mass value="1"/>
+  <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+	<inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+</inertial> 
+  </link>
+
+  <joint name="pan_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="pan_link"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0 0 1"/>
+    <axis xyz="0 1 0" />
+    <limit effort="300" velocity="1.0" lower="-3.14" upper="3.14"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+
+  <link name="pan_link">
+    <visual>
+      <geometry>
+	<cylinder length="0.4" radius="0.04"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 1"/>
+      <material name="red">
+        <color rgba="0 0 1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+	<cylinder length="0.4" radius="0.06"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 1"/>
+    </collision>
+    <inertial>
+	<mass value="1"/>
+  <origin rpy="0 0 0" xyz="0 0 1"/>
+	<inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+</inertial>
+  </link>
+
+  <joint name="tilt_joint" type="revolute">
+    <parent link="pan_link"/>
+    <child link="tilt_link"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0 0 1"/>
+    <axis xyz="0 1 0" />
+    <limit effort="300" velocity="1.0" lower="-4.64" upper="4.64"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+
+  <link name="tilt_link">
+    <visual>
+      <geometry>
+	<cylinder length="0.4" radius="0.04"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="1 1 1"/>
+      <material name="green">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+	<cylinder length="0.4" radius="0.06"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="1 1 1"/>
+    </collision>
+    <inertial>
+	<mass value="1"/>
+  <origin rpy="0 0 0" xyz="1 1 1"/>
+	<inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+
+  </link>
+
+  <joint name="extra_joint" type="revolute">
+    <parent link="tilt_link"/>
+    <child link="extra_link"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0. 0. 1.0"/>
+    <axis xyz="0 1 0" />
+    <limit effort="300" velocity="1.0" lower="-4.64" upper="4.64"/>
+    <dynamics damping="50" friction="1"/>
+  </joint>
+
+  <link name="extra_link">
+    <visual>
+      <geometry>
+	<cylinder length="0.4" radius="0.04"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="1 1 1"/>
+      <material name="green">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+	<cylinder length="0.4" radius="0.06"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="1 1 1"/>
+    </collision>
+    <inertial>
+	<mass value="1"/>
+  	<origin rpy="0 0 0" xyz="1 1 1"/>
+	<inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+  <link name="upper_arm_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur5/visual/upperarm.dae"/>
+      </geometry>
+      <material name="LightGrey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://ur_description/meshes/ur5/collision/upperarm.stl"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="8.393"/>
+      <origin rpy="0 0 0" xyz="0.0 0.0 0.28"/>
+      <inertia ixx="0.22689067591" ixy="0.0" ixz="0.0" iyy="0.22689067591" iyz="0.0" izz="0.0151074"/>
+    </inertial>
+  </link>
+
+</robot>
