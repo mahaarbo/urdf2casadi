@@ -25,15 +25,15 @@
       <inertia ixx="0.00443333156" ixy="0.0" ixz="0.0" iyy="0.00443333156" iyz="0.0" izz="0.0072"/>
     </inertial>
   </link>
-  <joint name="shoulder_pan_joint" type="revolute">
+  <joint name="joint1" type="revolute">
     <parent link="base_link"/>
-    <child link="shoulder_link"/>
+    <child link="link1"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.089159"/>
     <axis xyz="1 0 0"/>
     <limit effort="150.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.15"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="shoulder_link">
+  <link name="link1">
     <visual>
       <geometry>
         <cylinder length="0.03" radius="0.2"/>
@@ -53,15 +53,15 @@
       <inertia ixx="0.010267495893" ixy="0.0" ixz="0.0" iyy="0.010267495893" iyz="0.0" izz="0.00666"/>
     </inertial>
   </link>
-  <joint name="shoulder_lift_joint" type="revolute">
-    <parent link="shoulder_link"/>
-    <child link="upper_arm_link"/>
+  <joint name="joint2" type="revolute">
+    <parent link="link1"/>
+    <child link="link2"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.13585 0.0"/>
     <axis xyz="1 0 0"/>
     <limit effort="150.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.15"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="upper_arm_link">
+  <link name="link2">
     <visual>
       <geometry>
         <cylinder length="0.03" radius="0.2"/>
@@ -81,15 +81,15 @@
       <inertia ixx="0.22689067591" ixy="0.0" ixz="0.0" iyy="0.22689067591" iyz="0.0" izz="0.0151074"/>
     </inertial>
   </link>
-  <joint name="elbow_joint" type="revolute">
-    <parent link="upper_arm_link"/>
-    <child link="forearm_link"/>
+  <joint name="joint3" type="revolute">
+    <parent link="link2"/>
+    <child link="link3"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.1197 0.425"/>
     <axis xyz="0 1 0"/>
     <limit effort="150.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.15"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="forearm_link">
+  <link name="link3">
     <visual>
       <geometry>
         <cylinder length="0.03" radius="0.2"/>
@@ -109,15 +109,15 @@
       <inertia ixx="0.049443313556" ixy="0.0" ixz="0.0" iyy="0.049443313556" iyz="0.0" izz="0.004095"/>
     </inertial>
   </link>
-  <joint name="wrist_1_joint" type="revolute">
-    <parent link="forearm_link"/>
-    <child link="wrist_1_link"/>
+  <joint name="joint4" type="revolute">
+    <parent link="link3"/>
+    <child link="link4"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.0 0.39225"/>
     <axis xyz="1 0 0"/>
     <limit effort="28.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.2"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="wrist_1_link">
+  <link name="link4">
     <visual>
       <geometry>
         <cylinder length="0.03" radius="0.2"/>
@@ -137,15 +137,15 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_2_joint" type="revolute">
-    <parent link="wrist_1_link"/>
-    <child link="wrist_2_link"/>
+  <joint name="joint5" type="revolute">
+    <parent link="link4"/>
+    <child link="link5"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.093 0.0"/>
     <axis xyz="1 0 0"/>
     <limit effort="28.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.2"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="wrist_2_link">
+  <link name="link5">
     <visual>
       <geometry>
         <cylinder length="0.03" radius="0.2"/>
@@ -165,8 +165,8 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_3_joint" type="revolute">
-    <parent link="wrist_2_link"/>
+  <joint name="joint6" type="revolute">
+    <parent link="link5"/>
     <child link="link6"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.09465"/>
     <axis xyz="1 0 0"/>
@@ -193,15 +193,15 @@
       <inertia ixx="0.0171364731454" ixy="0.0" ixz="0.0" iyy="0.0171364731454" iyz="0.0" izz="0.033822"/>
     </inertial>
   </link>
-  <joint name="shoulder_lift_joint2" type="revolute">
+  <joint name="joint7" type="revolute">
     <parent link="link6"/>
-    <child link="upper_arm_link2"/>
+    <child link="link7"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.13585 0.0"/>
     <axis xyz="1 0 0"/>
     <limit effort="150.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.15"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="upper_arm_link2">
+  <link name="link7">
     <visual>
       <geometry>
         <cylinder length="0.03" radius="0.2"/>
@@ -221,8 +221,8 @@
       <inertia ixx="0.22689067591" ixy="0.0" ixz="0.0" iyy="0.22689067591" iyz="0.0" izz="0.0151074"/>
     </inertial>
   </link>
-  <joint name="elbow_joint2" type="revolute">
-    <parent link="upper_arm_link2"/>
+  <joint name="joint8" type="revolute">
+    <parent link="link7"/>
     <child link="link8"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.1197 0.425"/>
     <axis xyz="0 -1.0 0"/>
@@ -249,7 +249,7 @@
       <inertia ixx="0.049443313556" ixy="0.0" ixz="0.0" iyy="0.049443313556" iyz="0.0" izz="0.004095"/>
     </inertial>
   </link>
-  <joint name="wrist_1_joint2" type="revolute">
+  <joint name="joint9" type="revolute">
     <parent link="link8"/>
     <child link="link9"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.0 0.39225"/>
@@ -277,7 +277,7 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_2_joint2" type="revolute">
+  <joint name="joint10" type="revolute">
     <parent link="link9"/>
     <child link="link10"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.093 0.0"/>
@@ -305,7 +305,7 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_3_joint2" type="revolute">
+  <joint name="joint11" type="revolute">
     <parent link="link10"/>
     <child link="link11"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.09465"/>
@@ -333,15 +333,15 @@
       <inertia ixx="0.0171364731454" ixy="0.0" ixz="0.0" iyy="0.0171364731454" iyz="0.0" izz="0.033822"/>
     </inertial>
   </link>
-  <joint name="shoulder_pan_joint3" type="revolute">
+  <joint name="joint12" type="revolute">
     <parent link="link11"/>
-    <child link="shoulder_link3"/>
+    <child link="link12"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.089159"/>
     <axis xyz="0 0 1"/>
     <limit effort="150.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.15"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="shoulder_link3">
+  <link name="link12">
     <visual>
       <geometry>
         <cylinder length="0.03" radius="0.2"/>
@@ -361,8 +361,8 @@
       <inertia ixx="0.010267495893" ixy="0.0" ixz="0.0" iyy="0.010267495893" iyz="0.0" izz="0.00666"/>
     </inertial>
   </link>
-  <joint name="shoulder_lift_joint3" type="revolute">
-    <parent link="shoulder_link3"/>
+  <joint name="joint13" type="revolute">
+    <parent link="link12"/>
     <child link="link13"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.13585 0.0"/>
     <axis xyz="1 0 0"/>
@@ -389,7 +389,7 @@
       <inertia ixx="0.22689067591" ixy="0.0" ixz="0.0" iyy="0.22689067591" iyz="0.0" izz="0.0151074"/>
     </inertial>
   </link>
-  <joint name="elbow_joint3" type="revolute">
+  <joint name="joint14" type="revolute">
     <parent link="link13"/>
     <child link="link14"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.1197 0.425"/>
@@ -417,7 +417,7 @@
       <inertia ixx="0.049443313556" ixy="0.0" ixz="0.0" iyy="0.049443313556" iyz="0.0" izz="0.004095"/>
     </inertial>
   </link>
-  <joint name="wrist_1_joint3" type="revolute">
+  <joint name="joint15" type="revolute">
     <parent link="link14"/>
     <child link="link15"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.0 0.39225"/>
@@ -445,7 +445,7 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_2_joint3" type="revolute">
+  <joint name="joint16" type="revolute">
     <parent link="link15"/>
     <child link="link16"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.093 0.0"/>
@@ -473,7 +473,7 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_2_joint3" type="revolute">
+  <joint name="joint17" type="revolute">
     <parent link="link16"/>
     <child link="link17"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.093 0.0"/>
@@ -501,7 +501,7 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_3_joint3" type="revolute">
+  <joint name="joint18" type="revolute">
     <parent link="link17"/>
     <child link="link18"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.09465"/>
@@ -529,7 +529,7 @@
       <inertia ixx="0.0171364731454" ixy="0.0" ixz="0.0" iyy="0.0171364731454" iyz="0.0" izz="0.033822"/>
     </inertial>
   </link>
-  <joint name="shoulder_pan_joint4" type="revolute">
+  <joint name="joint19" type="revolute">
     <parent link="link18"/>
     <child link="link19"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.089159"/>
@@ -557,7 +557,7 @@
       <inertia ixx="0.010267495893" ixy="0.0" ixz="0.0" iyy="0.010267495893" iyz="0.0" izz="0.00666"/>
     </inertial>
   </link>
-  <joint name="shoulder_lift_joint4" type="revolute">
+  <joint name="joint20" type="revolute">
     <parent link="link19"/>
     <child link="link20"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.13585 0.0"/>
@@ -580,12 +580,12 @@
       </geometry>
     </collision>
     <inertial>
-      <mass value="8.393"/>
+      <mass value="4.393"/>
       <origin rpy="0 0 0" xyz="0.0 0.0 0.28"/>
       <inertia ixx="0.22689067591" ixy="0.0" ixz="0.0" iyy="0.22689067591" iyz="0.0" izz="0.0151074"/>
     </inertial>
   </link>
-  <joint name="shoulder_lift_joint4" type="revolute">
+  <joint name="joint21" type="revolute">
     <parent link="link20"/>
     <child link="link21"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.13585 0.0"/>
@@ -613,7 +613,7 @@
       <inertia ixx="0.22689067591" ixy="0.0" ixz="0.0" iyy="0.22689067591" iyz="0.0" izz="0.0151074"/>
     </inertial>
   </link>
-  <joint name="elbow_joint4" type="revolute">
+  <joint name="joint22" type="revolute">
     <parent link="link21"/>
     <child link="link22"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.1197 0.425"/>
@@ -641,7 +641,7 @@
       <inertia ixx="0.049443313556" ixy="0.0" ixz="0.0" iyy="0.049443313556" iyz="0.0" izz="0.004095"/>
     </inertial>
   </link>
-  <joint name="wrist_1_joint4" type="revolute">
+  <joint name="joint23" type="revolute">
     <parent link="link22"/>
     <child link="link23"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.0 0.39225"/>
@@ -669,7 +669,7 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_2_joint4" type="revolute">
+  <joint name="joint24" type="revolute">
     <parent link="link23"/>
     <child link="link24"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.093 0.0"/>
@@ -697,7 +697,7 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_3_joint4" type="revolute">
+  <joint name="joint25" type="revolute">
     <parent link="link24"/>
     <child link="link25"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.09465"/>
@@ -725,7 +725,7 @@
       <inertia ixx="0.0171364731454" ixy="0.0" ixz="0.0" iyy="0.0171364731454" iyz="0.0" izz="0.033822"/>
     </inertial>
   </link>
-  <joint name="shoulder_pan_joint5" type="revolute">
+  <joint name="joint26" type="revolute">
     <parent link="link25"/>
     <child link="link26"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.089159"/>
@@ -753,7 +753,7 @@
       <inertia ixx="0.010267495893" ixy="0.0" ixz="0.0" iyy="0.010267495893" iyz="0.0" izz="0.00666"/>
     </inertial>
   </link>
-  <joint name="shoulder_lift_joint5" type="revolute">
+  <joint name="joint27" type="revolute">
     <parent link="link26"/>
     <child link="link27"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.13585 0.0"/>
@@ -781,7 +781,7 @@
       <inertia ixx="0.22689067591" ixy="0.0" ixz="0.0" iyy="0.22689067591" iyz="0.0" izz="0.0151074"/>
     </inertial>
   </link>
-  <joint name="elbow_joint5" type="revolute">
+  <joint name="joint28" type="revolute">
     <parent link="link27"/>
     <child link="link28"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.1197 0.425"/>
@@ -809,7 +809,7 @@
       <inertia ixx="0.049443313556" ixy="0.0" ixz="0.0" iyy="0.049443313556" iyz="0.0" izz="0.004095"/>
     </inertial>
   </link>
-  <joint name="wrist_1_joint5" type="revolute">
+  <joint name="joint29" type="revolute">
     <parent link="link28"/>
     <child link="link29"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.0 0.39225"/>
@@ -837,7 +837,7 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_2_joint5" type="revolute">
+  <joint name="joint30" type="revolute">
     <parent link="link29"/>
     <child link="link30"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.093 0.0"/>
@@ -865,7 +865,7 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_3_joint5" type="revolute">
+  <joint name="joint31" type="revolute">
     <parent link="link30"/>
     <child link="link31"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.09465"/>
