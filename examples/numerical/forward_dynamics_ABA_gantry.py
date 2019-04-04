@@ -5,7 +5,7 @@ from urdf_parser_py.urdf import URDF, Pose
 import os
 import urdf2casadi.urdfparser as u2c
 
-#urmodel = rbdl.loadModel("ur5_rbdl.urdf")
+
 asd = u2c.URDFparser()
 robot_desc = asd.from_file("/home/lillmaria/urdf2casadi/examples/urdf/thrivaldi.urdf")
 root = "gantry_root"
@@ -21,6 +21,10 @@ tau = [None]*(n_joints)
 gravity = [0., 0., -9.81]
 error = np.zeros(n_joints)
 
+qddot_sym_aba = asd.get_forward_dynamics_aba(root, tip, gravity = gravity)
+qddot_sym_crba = asd.get_forward_dynamics_crba(root, tip, gravity = gravity)
+
+
 def u2c2np(asd):
     return cs.Function("temp",[],[asd])()["o0"].toarray()
 
@@ -30,14 +34,10 @@ for i in range(n_itr):
     for j in range(n_joints):
         q[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
         qdot[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
-        #Har tau noen restrictions?
         tau[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
 
-    qddot_sym_crba = asd.get_forward_dynamics_CRBA(root, tip, tau, gravity)
-    qddot_u2c_crba = qddot_sym_crba(q, qdot)
-
-    qddot_sym_aba = asd.get_forward_dynamics_ABA(root, tip, tau, gravity)
-    qddot_u2c_aba = qddot_sym_aba(q, qdot)
+    qddot_u2c_crba = qddot_sym_crba(q, qdot, tau)
+    qddot_u2c_aba = qddot_sym_aba(q, qdot, tau)
 
     for qddot_idx in range(n_joints):
         error[qddot_idx] += np.absolute(u2c2np(qddot_u2c_aba[qddot_idx]) - u2c2np(qddot_u2c_crba)[qddot_idx])

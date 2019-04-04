@@ -19,7 +19,7 @@ n_joints = asd.get_n_joints(root, tip)
 grav = kdl.Vector()
 q_kdl = kdl.JntArray(n_joints)
 q = [None]*n_joints
-M_sym = asd.get_jointspace_inertia_matrix(root, tip)
+M_sym = asd.get_inertia_matrix_crba(root, tip)
 error = np.zeros((n_joints, n_joints))
 M_kdl = kdl.JntSpaceInertiaMatrix(n_joints)
 
@@ -35,7 +35,6 @@ for i in range(n_itr):
         q[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
         q_kdl[j] = q[j]
 
-
     kdl.ChainDynParam(gantry_chain, grav).JntToMass(q_kdl, M_kdl)
     M_u2c = M_sym(q)
 
@@ -43,8 +42,7 @@ for i in range(n_itr):
         for col_idx in range(n_joints):
             error[row_idx][col_idx] += np.absolute((kdl2np(M_kdl[row_idx,col_idx])) - u2c2np(M_u2c[row_idx, col_idx]))
 
-
-print "Errors in inertia matrix with",n_itr, "iterations and comparing against KDL:\n", error
+print "Errors in inertia matrix with", n_itr, "iterations and comparing against KDL:\n", error
 
 sum_error = 0
 for row in range(n_joints):

@@ -5,15 +5,15 @@ from urdf_parser_py.urdf import URDF, Pose
 import os
 import urdf2casadi.urdf2casadi.urdfparser as u2c
 
-urmodel = rbdl.loadModel("ur5_rbdl.urdf")
+urmodel = rbdl.loadModel("/home/lillmaria/urdf2casadi/examples/urdf/ur5_rbdl.urdf")
 asd = u2c.URDFparser()
-robot_desc = asd.from_file("ur5_rbdl.urdf")
+robot_desc = asd.from_file("/home/lillmaria/urdf2casadi/examples/urdf/ur5_rbdl.urdf")
 root = "base_link"
 tip = "wrist_3_link"
 
 
 jointlist, names, q_max, q_min = asd.get_joint_info(root, tip)
-n_joints = len(jointlist)
+n_joints = asd.get_n_joints(root, tip)
 
 
 q = np.zeros(n_joints)

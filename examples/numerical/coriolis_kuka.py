@@ -23,7 +23,7 @@ qdot_kdl = kdl.JntArray(n_joints)
 grav = kdl.Vector()
 C_kdl = kdl.JntArray(n_joints)
 
-C_sym = asd.get_jointspace_bias_matrix(root, tip)
+C_sym = asd.get_coriolis_rnea(root, tip)
 q = [None]*n_joints
 qdot = [None]*n_joints
 

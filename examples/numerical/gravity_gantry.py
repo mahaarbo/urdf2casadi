@@ -24,7 +24,7 @@ gravity_kdl = kdl.Vector()
 gravity_kdl[2] = -9.81
 gravity_u2c = [0., 0., -9.81]
 G_kdl = kdl.JntArray(n_joints)
-G_sym = asd.get_gravity_RNEA(root, tip, gravity_u2c)
+G_sym = asd.get_gravity_rnea(root, tip, gravity_u2c)
 error = np.zeros(n_joints)
 
 def u2c2np(asd):

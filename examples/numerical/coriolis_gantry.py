@@ -14,10 +14,6 @@ tip = 'gantry_tool0'
 gantry_chain = ur_tree.getChain(root,tip)
 
 jointlist, names, q_max, q_min = asd.get_joint_info(root, tip)
-
-#for i in range(len(jointlist)):
-#    print jointlist[i].type
-
 n_joints = asd.get_n_joints(root, tip)
 
 q_kdl = kdl.JntArray(n_joints)
@@ -28,7 +24,7 @@ q = [None]*n_joints
 qdot = [None]*n_joints
 
 C_kdl = kdl.JntArray(n_joints)
-C_sym = asd.get_jointspace_bias_matrix(root, tip)
+C_sym = asd.get_coriolis_rnea(root, tip)
 error = np.zeros(n_joints)
 
 def u2c2np(asd):
@@ -40,7 +36,7 @@ def kdl2np(asd):
         x.append(asd[i])
     return np.asarray(x)
 
-n_itr = 5
+n_itr = 1000
 for i in range(n_itr):
     for j in range(n_joints):
         q[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2

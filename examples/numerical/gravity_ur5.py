@@ -15,13 +15,14 @@ tip = 'wrist_3_link'
 ur_chain = ur_tree.getChain(root,tip)
 
 jointlist, names, q_max, q_min = asd.get_joint_info(root, tip)
-n_joints = len(jointlist)
-q = kdl.JntArray(n_joints)
+n_joints = asd.get_gravity_rnea(root, tip)
+q_kdl = kdl.JntArray(n_joints)
+q = [None]*n_joints
 gravity_kdl = kdl.Vector()
 gravity_kdl[2] = -9.81
 gravity_u2c = [0., 0., -9.81]
-res_kdl = kdl.JntArray(n_joints)
-gravity_sym = asd.get_gravity_RNEA(root, tip, gravity_u2c)
+G_kdl = kdl.JntArray(n_joints)
+G_sym = asd.get_gravity_RNEA(root, tip, gravity_u2c)
 error = np.zeros(n_joints)
 
 def u2c2np(asd):
@@ -36,8 +37,8 @@ for i in range(n_itr):
     for j in range(n_joints):
         q[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
 
-    kdl.ChainDynParam(ur_chain, gravity_kdl).JntToGravity(q, res_kdl)
-    res_u2c = gravity_sym(q)
+    kdl.ChainDynParam(ur_chain, gravity_kdl).JntToGravity(q, G_kdl)
+    G_u2c = G_sym(q)
 
     for tau_idx in range(n_joints):
         error[tau_idx] += np.absolute((kdl2np(res_kdl)[tau_idx] - u2c2np(res_u2c)[tau_idx]))

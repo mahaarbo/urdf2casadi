@@ -68,7 +68,7 @@ class URDFparser(object):
 
 
 
-	def _get_n_joints(self, root, tip):
+	def get_n_joints(self, root, tip):
 		"""Returns number of actuated (i.e not fixed) joints"""
 
 		chain = self.robot_desc.get_chain(root, tip)
@@ -342,7 +342,7 @@ class URDFparser(object):
 			f[i] -= cs.mtimes(i_X_0[i], external_f[i])
 		return f
 
-	def get_inverse_dynamics_RNEA(self, root, tip, gravity = None, f_ext = None):
+	def get_inverse_dynamics_rnea(self, root, tip, gravity = None, f_ext = None):
 		"""Calculates and returns joint torques (inverse dynamics) as a casadi function"""
 
 		if self.robot_desc is None:
@@ -391,8 +391,8 @@ class URDFparser(object):
 
 
 
-	def get_gravity_RNEA(self, root, tip, gravity):
-		"""Calculates and returns the gravity terms for each joint, given as a casadi function, using RNEA"""
+	def get_gravity_rnea(self, root, tip, gravity):
+		"""Calculates and returns the gravity terms for each joint, given as a casadi function, using rnea"""
 
 		if self.robot_desc is None:
 			raise ValueError('Robot description not loaded from urdf')
@@ -452,7 +452,7 @@ class URDFparser(object):
 
 
 
-	def get_jointspace_inertia_matrix(self, root, tip):
+	def get_inertia_matrix_crba(self, root, tip):
 			"""Returns the joint space inertia matrix aka the M-component of the equation of motion tau = M(q)q_ddot + C(q, q_dot) + g(q)"""
 			if self.robot_desc is None:
 				raise ValueError('Robot description not loaded from urdf')
@@ -563,8 +563,8 @@ class URDFparser(object):
 
 
 
-	def get_jointspace_bias_matrix(self, root, tip, f_ext = None):
-		"""Returns the coriolis terms for each joint, that is the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot) + g(q), using RNEA"""
+	def get_coriolis_rnea(self, root, tip, f_ext = None):
+		"""Returns the coriolis terms for each joint, that is the C-component of the equation of motion tau = H(q)q_ddot + C(q, q_dot) + g(q), using rnea"""
 		if self.robot_desc is None:
 			raise ValueError('Robot description not loaded from urdf')
 
@@ -608,8 +608,8 @@ class URDFparser(object):
 
 
 
-	def get_forward_dynamics_CRBA(self, root, tip, gravity = None, f_ext = None):
-			"""Returns the joint accelerations, i.e the forward dynamics, by solving the equation of motion and combining CRBA and RNEA"""
+	def get_forward_dynamics_crba(self, root, tip, gravity = None, f_ext = None):
+			"""Returns the joint accelerations, i.e the forward dynamics, by solving the equation of motion and combining crba and rnea"""
 
 			if self.robot_desc is None:
 				raise ValueError('Robot description not loaded from urdf')
@@ -631,7 +631,7 @@ class URDFparser(object):
 
 
 
-	def get_forward_dynamics_ABA(self, root, tip, gravity = None, f_ext = None):
+	def get_forward_dynamics_aba(self, root, tip, gravity = None, f_ext = None):
 		"""Returns the joint accelerations, i.e forward dynamics, using the inertia articulated rigid body algorithm"""
 
 		if self.robot_desc is None:

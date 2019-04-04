@@ -20,7 +20,7 @@ q = kdl.JntArray(n_joints)
 grav = kdl.Vector()
 qdot = kdl.JntArray(n_joints)
 res_kdl = kdl.JntArray(n_joints)
-M_u2c = asd.get_jointspace_inertia_matrix(root, tip)
+M_u2c = asd.get_inertia_matrix_crba(root, tip)
 error = np.zeros((n_joints, n_joints))
 M_kdl = kdl.JntSpaceInertiaMatrix(n_joints)
 

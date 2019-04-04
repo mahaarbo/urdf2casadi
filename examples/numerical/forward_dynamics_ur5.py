@@ -9,11 +9,11 @@ urmodel = rbdl.loadModel("ur5_rbdl.urdf")
 asd = u2c.URDFparser()
 robot_desc = asd.from_file("ur5_rbdl.urdf")
 root = "base_link"
-tip = "wrist_3_link"
+tip = "tool0"
 
 
 jointlist, names, q_max, q_min = asd.get_joint_info(root, tip)
-n_joints = len(jointlist)
+n_joints = asd._get_n_joints(root, tip)
 
 
 q = np.zeros(n_joints)
@@ -21,6 +21,7 @@ qdot = np.zeros(n_joints)
 qddot_rbdl = np.zeros(n_joints)
 tau = np.zeros(n_joints)
 
+qddot_sym = asd.get_forward_dynamics_crba(root, tip, gravity = gravity)
 gravity = [0., 0., -9.81]
 error = np.zeros(n_joints)
 
@@ -33,14 +34,12 @@ for i in range(n_itr):
     for j in range(n_joints):
         q[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
         qdot[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
-        #Har tau noen restrictions?
         tau[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
 
     rbdl.ForwardDynamics(urmodel, q, qdot, tau, qddot_rbdl)
 
     #Skal tau legges inn symbolsk eller ok med den numerisk?
-    qddot_sym = asd.get_forward_dynamics_CRBA(root, tip, tau, gravity)
-    qddot_u2c = qddot_sym(q, qdot)
+    qddot_u2c = qddot_sym(q, qdot, tau)
 
     for qddot_idx in range(n_joints):
         error[qddot_idx] += np.absolute(qddot_rbdl[qddot_idx] - u2c2np(qddot_u2c)[qddot_idx])

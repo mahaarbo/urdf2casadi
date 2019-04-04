@@ -21,6 +21,7 @@ qddot = np.zeros(n_joints)
 tau_rbdl = np.zeros(n_joints)
 
 gravity = [0., 0., -9.81]
+tau_sym = asd.get_inverse_dynamics_rnea(root, tip, gravity)
 error = np.zeros(n_joints)
 
 def u2c2np(asd):
@@ -34,8 +35,6 @@ for i in range(n_itr):
         qddot[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
 
     rbdl.InverseDynamics(urmodel, q, qdot, qddot, tau_rbdl)
-
-    tau_sym = asd.get_inverse_dynamics_RNEA(root, tip, gravity)
     tau_u2c = tau_sym(q, qdot, qddot)
 
     for tau_idx in range(n_joints):
