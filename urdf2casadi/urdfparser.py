@@ -608,7 +608,7 @@ class URDFparser(object):
 
 
 
-	def get_forward_dynamics_CRBA(self, root, tip, tau, gravity = None, f_ext = None):
+	def get_forward_dynamics_CRBA(self, root, tip, gravity = None, f_ext = None):
 			"""Returns the joint accelerations, i.e the forward dynamics, by solving the equation of motion and combining CRBA and RNEA"""
 
 			if self.robot_desc is None:
@@ -617,6 +617,7 @@ class URDFparser(object):
 			n_joints = self._get_n_joints(root, tip)
 			q = cs.SX.sym("q", n_joints)
 			q_dot = cs.SX.sym("q_dot", n_joints)
+			tau = cs.SX.sym("tau", n_joints)
 			q_ddot = cs.SX.zeros(n_joints)
 
 			i_X_p, Si, Ic = self._model_calculation(root, tip, q)
@@ -624,13 +625,13 @@ class URDFparser(object):
 			M_inv = cs.solve(M, cs.SX.eye(M.size1()))
 			C = self._get_C(i_X_p, Si, Ic, q, q_dot, n_joints, gravity, f_ext)
 			q_ddot = cs.mtimes(M_inv, (tau - C))
-			q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot], {"jit": True, "jit_options":{"flags":"-Ofast"}})
+			q_ddot = cs.Function("q_ddot", [q, q_dot, tau], [q_ddot], {"jit": True, "jit_options":{"flags":"-Ofast"}})
 
 			return q_ddot
 
 
 
-	def get_forward_dynamics_ABA(self, root, tip, tau, gravity = None, f_ext = None):
+	def get_forward_dynamics_ABA(self, root, tip, gravity = None, f_ext = None):
 		"""Returns the joint accelerations, i.e forward dynamics, using the inertia articulated rigid body algorithm"""
 
 		if self.robot_desc is None:
@@ -639,6 +640,7 @@ class URDFparser(object):
 		n_joints = self._get_n_joints(root, tip)
 		q = cs.SX.sym("q", n_joints)
 		q_dot = cs.SX.sym("q_dot", n_joints)
+		tau = cs.SX.sym("tau", n_joints)
 		q_ddot = cs.SX.zeros(n_joints)
 		i_X_p, Si, Ic = self._model_calculation(root, tip, q)
 
@@ -696,7 +698,7 @@ class URDFparser(object):
 			q_ddot[i] = (u[i] - cs.mtimes(U[i].T, a_temp))/d[i]
 			a.append(a_temp + cs.mtimes(Si[i], q_ddot[i]))#6x1
 
-		q_ddot = cs.Function("q_ddot", [q, q_dot], [q_ddot], {"jit": True, "jit_options":{"flags":"-Ofast"}})
+		q_ddot = cs.Function("q_ddot", [q, q_dot, tau], [q_ddot], {"jit": True, "jit_options":{"flags":"-Ofast"}})
 		return q_ddot
 
 
