@@ -3,7 +3,7 @@ import numpy as np
 import casadi as cs
 from urdf_parser_py.urdf import URDF, Pose
 import os
-import urdf2casadi.urdf2casadi.urdfparser as u2c
+import urdf2casadi.urdfparser as u2c
 
 gantry_model = rbdl.loadModel("gantry.urdf")
 asd = u2c.URDFparser()

@@ -36,7 +36,7 @@ def kdl2np(asd):
         x.append(asd[i])
     return np.asarray(x)
 
-n_itr = 1000
+n_itr = 10000
 for i in range(n_itr):
     for j in range(n_joints):
         q[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
@@ -46,8 +46,6 @@ for i in range(n_itr):
 
     kdl.ChainDynParam(gantry_chain, grav).JntToCoriolis(q_kdl, qdot_kdl, C_kdl)
     C_u2c = C_sym(q,qdot)
-    print "C_u2c:", C_u2c
-    print "C_kdl:", C_kdl
 
     for tau_idx in range(n_joints):
         error[tau_idx] += np.absolute((kdl2np(C_kdl)[tau_idx] - u2c2np(C_u2c)[tau_idx]))

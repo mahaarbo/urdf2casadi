@@ -348,7 +348,7 @@ class URDFparser(object):
 		if self.robot_desc is None:
 			raise ValueError('Robot description not loaded from urdf')
 
-		n_joints = self._get_n_joints(root, tip)
+		n_joints = self.get_n_joints(root, tip)
 		q = cs.SX.sym("q", n_joints)
 		q_dot = cs.SX.sym("q_dot", n_joints)
 		q_ddot = cs.SX.sym("q_ddot", n_joints)
@@ -397,7 +397,7 @@ class URDFparser(object):
 		if self.robot_desc is None:
 			raise ValueError('Robot description not loaded from urdf')
 
-		n_joints = self._get_n_joints(root, tip)
+		n_joints = self.get_n_joints(root, tip)
 		q = cs.SX.sym("q", n_joints)
 		i_X_p, Si, Ic = self._model_calculation(root, tip, q)
 
@@ -458,7 +458,7 @@ class URDFparser(object):
 				raise ValueError('Robot description not loaded from urdf')
 
 
-			n_joints = self._get_n_joints(root, tip)
+			n_joints = self.get_n_joints(root, tip)
 			q = cs.SX.sym("q", n_joints)
 			i_X_p, Si, Ic = self._model_calculation(root, tip, q)
 			M = cs.SX.zeros(n_joints, n_joints)
@@ -492,7 +492,7 @@ class URDFparser(object):
 				raise ValueError('Robot description not loaded from urdf')
 
 
-			n_joints = self._get_n_joints(root, tip)
+			n_joints = self.get_n_joints(root, tip)
 			q = cs.SX.sym("q", n_joints)
 			i_X_p, Si, Ic = self._model_calculation(root, tip, q)
 			H = cs.SX.zeros(n_joints, n_joints)
@@ -569,7 +569,7 @@ class URDFparser(object):
 			raise ValueError('Robot description not loaded from urdf')
 
 
-		n_joints = self._get_n_joints(root, tip)
+		n_joints = self.get_n_joints(root, tip)
 		q = cs.SX.sym("q", n_joints)
 		q_dot = cs.SX.sym("q_dot", n_joints)
 		i_X_p, Si, Ic = self._model_calculation(root, tip, q)
@@ -614,7 +614,7 @@ class URDFparser(object):
 			if self.robot_desc is None:
 				raise ValueError('Robot description not loaded from urdf')
 
-			n_joints = self._get_n_joints(root, tip)
+			n_joints = self.get_n_joints(root, tip)
 			q = cs.SX.sym("q", n_joints)
 			q_dot = cs.SX.sym("q_dot", n_joints)
 			tau = cs.SX.sym("tau", n_joints)
@@ -637,7 +637,7 @@ class URDFparser(object):
 		if self.robot_desc is None:
 			raise ValueError('Robot description not loaded from urdf')
 
-		n_joints = self._get_n_joints(root, tip)
+		n_joints = self.get_n_joints(root, tip)
 		q = cs.SX.sym("q", n_joints)
 		q_dot = cs.SX.sym("q_dot", n_joints)
 		tau = cs.SX.sym("tau", n_joints)
