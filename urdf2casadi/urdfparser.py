@@ -337,9 +337,9 @@ class URDFparser(object):
 
 
 
-	def _apply_external_forces(external_f, f, i_X_0):
+	def _apply_external_forces(self, external_f, f, i_X_p):
 		for i in range(0, len(f)):
-			f[i] -= cs.mtimes(i_X_0[i], external_f[i])
+			f[i] -= cs.mtimes(i_X_p[i].T, external_f[i])
 		return f
 
 	def get_inverse_dynamics_rnea(self, root, tip, gravity = None, f_ext = None):
@@ -377,7 +377,7 @@ class URDFparser(object):
 			f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))
 
 		if f_ext is not None:
-			f = self._apply_external_forces(f_ext, f, i_X_0)
+			f = self._apply_external_forces(f_ext, f, i_X_p)
 
 		for i in range(n_joints-1, -1, -1):
 			tau[i] = cs.mtimes(Si[i].T, f[i])
