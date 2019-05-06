@@ -4,16 +4,16 @@ import os # For current directory
 import urdf2casadi.urdfparser as u2c
 import numpy as np
 import PyKDL as kdl
-import kdl_parser.kdl_parser_py.kdl_parser_py.urdf as kdlurdf
+import kdl_parser_py.urdf as kdlurdf
 
 root = 'base_link'
-tip = 'base_bellow_link'
+tip = 'fl_caster_r_wheel_link'
 
-ok, ur_tree = kdlurdf.treeFromFile('/home/lillmaria/urdf2casadi/examples/urdf/pr2.urdf')
+ok, ur_tree = kdlurdf.treeFromFile('/home/lmjohann/urdf2casadi/examples/urdf/pr2.urdf')
 pr2_chain = ur_tree.getChain(root,tip)
 
 pr2 = u2c.URDFparser()
-robot_desc = pr2.from_file('/home/lillmaria/urdf2casadi/examples/urdf/pr2.urdf')
+robot_desc = pr2.from_file('/home/lmjohann/urdf2casadi/examples/urdf/pr2.urdf')
 
 
 jointlist, names, q_max, q_min = pr2.get_joint_info(root, tip)

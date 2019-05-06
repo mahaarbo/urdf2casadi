@@ -4,17 +4,20 @@ import os # For current directory
 import urdf2casadi.urdfparser as u2c
 import numpy as np
 import PyKDL as kdl
-import kdl_parser.kdl_parser_py.kdl_parser_py.urdf as kdlurdf
+import kdl_parser_py.urdf as kdlurdf
 
+root = 'base_link'
+tip = 'link60'
+#root = "calib_kuka_arm_base_link"
+#tip = "kuka_arm_7_link"
 
-root = "calib_kuka_arm_base_link"
-tip = "kuka_arm_7_link"
-
-ok, ur_tree = kdlurdf.treeFromFile('/home/lillmaria/urdf2casadi/examples/urdf/kuka.urdf')
+ok, ur_tree = kdlurdf.treeFromFile('/home/lmjohann/urdf2casadi/examples/timing/urdf4timing/60dof.urdf')
+#ok, ur_tree = kdlurdf.treeFromFile('/home/lmjohann/urdf2casadi/examples/urdf/kuka.urdf')
 kuka_chain = ur_tree.getChain(root,tip)
 
 kuka = u2c.URDFparser()
-kuka.from_file("/home/lillmaria/urdf2casadi/examples/urdf/kuka.urdf")
+#kuka.from_file("/home/lmjohann/urdf2casadi/examples/urdf/kuka.urdf")
+kuka.from_file("/home/lmjohann/urdf2casadi/examples/timing/urdf4timing/60dof.urdf")
 
 
 jointlist, names, q_max, q_min = kuka.get_joint_info(root, tip)
@@ -51,7 +54,8 @@ for i in range(n_itr):
 
     kdl.ChainDynParam(kuka_chain, gravity_kdl).JntToGravity(q_kdl, G_kdl)
     G_u2c = G_sym(q)
-
+    #print G_u2c
+    #print G_kdl
     for tau_idx in range(n_joints):
         error[tau_idx] += np.absolute((kdl2np(G_kdl)[tau_idx] - u2c2np(G_u2c)[tau_idx]))
 

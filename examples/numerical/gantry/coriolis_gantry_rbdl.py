@@ -6,15 +6,14 @@ import os
 import urdf2casadi.urdfparser as u2c
 
 
-root = "calib_kuka_arm_base_link"
-tip = "kuka_arm_7_link"
+root = 'gantry_link_base'
+tip = 'gantry_tool0'
+urmodel = rbdl.loadModel("/home/lmjohann/urdf2casadi/examples/urdf/gantry.urdf")
+gantry = u2c.URDFparser()
+gantry.from_file("/home/lmjohann/urdf2casadi/examples/urdf/gantry.urdf")
 
-urmodel = rbdl.loadModel("/home/lmjohann/urdf2casadi/examples/urdf/kuka.urdf")
-kuka = u2c.URDFparser()
-kuka.from_file("/home/lmjohann/urdf2casadi/examples/urdf/kuka.urdf")
-
-jointlist, names, q_max, q_min = kuka.get_joint_info(root, tip)
-n_joints = kuka.get_n_joints(root, tip)
+jointlist, names, q_max, q_min = gantry.get_joint_info(root, tip)
+n_joints = gantry.get_n_joints(root, tip)
 
 q_rbdl = np.zeros(n_joints)
 qdot_rbdl = np.zeros(n_joints)
@@ -22,10 +21,8 @@ qddot_rbdl = np.zeros(n_joints)
 id_rbdl = np.zeros(n_joints)
 
 q = [None]*n_joints
-qdot = [None]*n_joints
-qddot = [None]*n_joints
 gravity = [0., 0., -9.81]
-id_sym = kuka.get_inverse_dynamics_rnea(root, tip, gravity)
+id_sym = gantry.get_gravity_rnea(root, tip, gravity)
 error = np.zeros(n_joints)
 
 def u2c2np(asd):
@@ -35,16 +32,11 @@ n_itr = 1000
 for i in range(n_itr):
     for j in range(n_joints):
         q[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
-        qdot[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
-        #qddot[j] = (q_max[j] - q_min[j])*np.random.rand()-(q_max[j] - q_min[j])/2
-
         q_rbdl[j] = q[j]
-        qdot_rbdl[j] = qdot[j]
-        #qddot_rbdl[j] = qddot[j]
 
 
     rbdl.InverseDynamics(urmodel, q_rbdl, qdot_rbdl, qddot_rbdl, id_rbdl)
-    id_u2c = id_sym(q, qdot, qddot_rbdl)
+    id_u2c = id_sym(q)
 
     for id_idx in range(n_joints):
         error[id_idx] += np.absolute(id_rbdl[id_idx] - u2c2np(id_u2c)[id_idx])

@@ -5,12 +5,12 @@ from urdf_parser_py.urdf import URDF, Pose
 import os
 import urdf2casadi.urdfparser as u2c
 
-kuka_model = rbdl.loadModel("kuka.urdf")
+kuka_model = rbdl.loadModel("/home/lmjohann/urdf2casadi/examples/urdf/kuka.urdf")
 
 root = "calib_kuka_arm_base_link"
 tip = "kuka_arm_7_link"
 kuka = u2c.URDFparser()
-kuka.from_file("kuka.urdf")
+kuka.from_file("/home/lmjohann/urdf2casadi/examples/urdf/kuka.urdf")
 
 jointlist, names, q_max, q_min = kuka.get_joint_info(root, tip)
 n_joints = kuka.get_n_joints(root, tip)
@@ -23,10 +23,9 @@ fd_rbdl = np.zeros(n_joints)
 q = [None]*n_joints
 qdot = [None]*n_joints
 tau = [None]*n_joints
-fd_sym = kuka.get_forward_dynamics_crba(root, tip, gravity)
-
 
 gravity = [0., 0., -9.81]
+fd_sym = kuka.get_forward_dynamics_crba(root, tip, gravity)
 error = np.zeros(n_joints)
 
 def u2c2np(asd):
@@ -43,9 +42,9 @@ for i in range(n_itr):
         qdot_rbdl[j] = qdot[j]
         tau_rbdl[j] = tau[j]
 
-    rbdl.ForwardDynamics(kuka_model, q_rbdl, qdot_rbdl, tau, fd_rbdl)
+    rbdl.ForwardDynamics(kuka_model, q_rbdl, qdot_rbdl, tau_rbdl, fd_rbdl)
 
-    fd_u2c = qddot_sym(q, qdot, tau)
+    fd_u2c = fd_sym(q, qdot, tau)
 
     for fd_idx in range(n_joints):
         error[fd_idx] += np.absolute(fd_rbdl[fd_idx] - u2c2np(fd_u2c)[fd_idx])

@@ -4,14 +4,7 @@
 <!-- |    EDITING THIS FILE BY HAND IS NOT RECOMMENDED                                 | -->
 <!-- =================================================================================== -->
 <!--Generates a urdf from the macro in gantry_macro.xacro -->
-<robot name="gantry" xmlns:xacro="http://wiki.ros.org/xacro">
-  <link name="gantry_root">
-    </link>
-  <joint name="gantry_joint_base" type="fixed">
-    <origin rpy="0 1.57079632679 0" xyz="0 0 0"/>
-    <parent link="gantry_root"/>
-    <child link="gantry_link_base"/>
-  </joint>
+<!-- <robot name="gantry" xmlns:xacro="http://wiki.ros.org/xacro">
   <link name="gantry_link_base">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -32,6 +25,7 @@
       </geometry>
     </collision>
   </link>
+
   <joint name="gantry_joint_e1" type="prismatic">
     <origin rpy="0 0 0" xyz="-2.570369 -0.057403 0.844145"/>
     <parent link="gantry_link_base"/>
@@ -39,6 +33,7 @@
     <axis xyz="0 0 1.0"/>
     <limit effort="1.0" lower="0" upper="1.54" velocity="0.5"/>
   </joint>
+
   <link name="gantry_link_leg">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0.114805 -0.069116"/>
@@ -55,10 +50,11 @@
     <collision name="gantry_collision_leg">
       <origin rpy="1.57079632679 -1.57079632679 0" xyz="0.000315 0.114805 -0.069116"/>
       <geometry>
-        <mesh filename="package://gantry_support/meshes/VIFS42.000.stl" scale="1.0 1.0 1.0"/>
+        <mesh filename="package:/<cylinder length="0.104" radius="0.06"/>/gantry_support/meshes/VIFS42.000.stl" scale="1.0 1.0 1.0"/>
       </geometry>
     </collision>
   </link>
+
   <joint name="gantry_joint_e2" type="prismatic">
     <origin rpy="-1.57079632679 -1.57079632679 0" xyz="-1.277963 2.407403 -0.476427"/>
     <parent link="gantry_link_leg"/>
@@ -66,6 +62,7 @@
     <axis xyz="0 0 1.0"/>
     <limit effort="1.0" lower="0" upper="4.7" velocity="0.83"/>
   </joint>
+
   <link name="gantry_link_trolley">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -86,6 +83,106 @@
       </geometry>
     </collision>
   </link>
+
+  <joint name="gantry_joint_e3" type="prismatic">
+    <origin rpy="1.57079632679 0 0" xyz="-0.164527 -0.651668 -0.053205"/>
+    <parent link="gantry_link_trolley"/>
+    <child link="gantry_link_arm"/>
+    <axis xyz="0 0 1.0"/>
+    <limit effort="1.0" lower="-1.6" upper="0" velocity="0.55"/>
+  </joint>
+  <link name="gantry_link_arm">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="100.0"/>
+      <inertia ixx="77.157539" ixy="-0.43952" ixz="-0.013708" iyy="77.235046" iyz="-8e-06" izz="1.060431"/>
+    </inertial>
+    <visual name="gantry_visual_arm">
+      <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://gantry_support/meshes/VIFS96.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="gantry_VMtl98"/>
+    </visual><robot name="gantry" xmlns:xacro="http://wiki.ros.org/xacro">
+  <link name="gantry_link_base">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="100.0"/>
+      <inertia ixx="71.623734" ixy="3.1e-05" ixz="0" iyy="788.87262" iyz="1.2e-05" izz="851.100647"/>
+    </inertial>
+    <visual name="gantry_visual_base">
+      <origin rpy="1.57079632679 -1.57079632679 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://gantry_support/meshes/VIFS01.001.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="gantry_03___Default.001"/>
+    </visual>
+    <collision name="gantry_collision_base">
+      <origin rpy="1.57079632679 -1.57079632679 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://gantry_support/meshes/VIFS01.000.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="gantry_joint_e1" type="prismatic">
+    <origin rpy="0 0 0" xyz="-2.570369 -0.057403 0.844145"/>
+    <parent link="gantry_link_base"/>
+    <child link="gantry_link_leg"/>
+    <axis xyz="0 0 1.0"/>
+    <limit effort="1.0" lower="0" upper="1.54" velocity="0.5"/>
+  </joint>
+
+  <link name="gantry_link_leg">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0.114805 -0.069116"/>
+      <mass value="1000.0"/>
+      <inertia ixx="1880.551147" ixy="0.000232" ixz="0" iyy="7958.77002" iyz="-13.379694" izz="6216.929688"/>
+    </inertial>
+    <visual name="gantry_visual_leg">
+      <origin rpy="1.57079632679 -1.57079632679 0" xyz="0 0.114805 -0.069116"/>
+      <geometry>
+        <mesh filename="package://gantry_support/meshes/VIFS42.001.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="gantry_01___Default.001"/>
+    </visual>
+    <collision name="gantry_collision_leg">
+      <origin rpy="1.57079632679 -1.57079632679 0" xyz="0.000315 0.114805 -0.069116"/>
+      <geometry>
+        <mesh filename="package:/<cylinder length="0.104" radius="0.06"/>/gantry_support/meshes/VIFS42.000.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="gantry_joint_e2" type="prismatic">
+    <origin rpy="-1.57079632679 -1.57079632679 0" xyz="-1.277963 2.407403 -0.476427"/>
+    <parent link="gantry_link_leg"/>
+    <child link="gantry_link_trolley"/>
+    <axis xyz="0 0 1.0"/>
+    <limit effort="1.0" lower="0" upper="4.7" velocity="0.83"/>
+  </joint>
+
+  <link name="gantry_link_trolley">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="100.0"/>
+      <inertia ixx="15.599652" ixy="1.71094" ixz="1.886528" iyy="9.19625" iyz="0.938975" izz="14.022485"/>
+    </inertial>
+    <visual name="gantry_visual_trolley">
+      <origin rpy="-3.14159265359 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://gantry_support/meshes/VIFS43.001.dae" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="gantry_02___Default.001"/>
+    </visual>
+    <collision name="gantry_collision_trolley">
+      <origin rpy="1.57079632679 0 0" xyz="-0.020567 0.254046 -0.042038"/>
+      <geometry>
+        <mesh filename="package://gantry_support/meshes/Cube.005.stl" scale="0.129538 0.485533 0.188935"/>
+      </geometry>
+    </collision>
+  </link>
+
   <joint name="gantry_joint_e3" type="prismatic">
     <origin rpy="1.57079632679 0 0" xyz="-0.164527 -0.651668 -0.053205"/>
     <parent link="gantry_link_trolley"/>
@@ -125,8 +222,7 @@
     <parent link="gantry_robot_connection"/>
     <child link="gantry_base_link"/>
   </joint>
-  <!-- LINKS -->
-  <!-- base link -->
+
   <link name="gantry_base_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -153,7 +249,7 @@
     <axis xyz="0 0 -1"/>
     <limit effort="0" lower="-3.22885911619" upper="3.22885911619" velocity="2.72271363311"/>
   </joint>
-  <!-- link 1 (A1) -->
+
   <link name="gantry_link_1">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -180,7 +276,7 @@
     <axis xyz="0 1 0"/>
     <limit effort="0" lower="-2.70526034059" upper="0.610865238198" velocity="2.72271363311"/>
   </joint>
-  <!-- link 2 -->
+
   <link name="gantry_link_2">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -207,7 +303,7 @@
     <axis xyz="0 1 0"/>
     <limit effort="0" lower="-2.26892802759" upper="2.68780704807" velocity="2.72271363311"/>
   </joint>
-  <!-- link 3 -->
+
   <link name="gantry_link_3">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -234,7 +330,7 @@
     <axis xyz="-1 0 0"/>
     <limit effort="0" lower="-6.10865238198" upper="6.10865238198" velocity="5.75958653158"/>
   </joint>
-  <!-- link 4 -->
+
   <link name="gantry_link_4">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -261,7 +357,7 @@
     <axis xyz="0 1 0"/>
     <limit effort="0" lower="-2.26892802759" upper="2.26892802759" velocity="5.75958653158"/>
   </joint>
-  <!-- link 5 -->
+
   <link name="gantry_link_5">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -288,7 +384,7 @@
     <axis xyz="-1 0 0"/>
     <limit effort="0" lower="-6.10865238198" upper="6.10865238198" velocity="10.7337748998"/>
   </joint>
-  <!-- link 6 -->
+
   <link name="gantry_link_6">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -313,7 +409,528 @@
     <child link="gantry_tool0"/>
     <origin rpy="0 1.57079632679 0" xyz="0.158 0 0"/>
   </joint>
-  <!-- tool 0 -->
-  <!-- This frame corresponds to the $FLANGE coordinate system in KUKA KRC controllers. -->
+
   <link name="gantry_tool0"/>
+    <collision name="gantry_collision_arm">
+      <origin rpy="0 0 0" xyz="0 0 1.34717"/>
+      <geometry>
+        <mesh filename="package://gantry_support/meshes/Cylinder.stl" scale="0.188288 0.188288 0.188288"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gantry_robot_connection_joint" type="fixed">
+    <origin rpy="-3.14159265359 0 0" xyz="-0.026405 0.000343 -1.392678"/>
+    <parent link="gantry_link_arm"/>
+    <child link="gantry_robot_connection"/>
+  </joint>
+  <link name="gantry_robot_connection">
+    </link>
+  <joint name="gantry_gantry_robot" type="fixed">
+    <origin rpy="0 0 1.57079632679" xyz="0 0 0"/>
+    <parent link="gantry_robot_connection"/>
+    <child link="gantry_base_link"/>
+  </joint>
+
+  <link name="gantry_base_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="2"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/visual/base_link.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/collision/base_link.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gantry_joint_a1" type="revolute">
+    <origin rpy="0 0 0" xyz="0 0 0.675"/>
+    <parent link="gantry_base_link"/>
+    <child link="gantry_link_1"/>
+    <axis xyz="0 0 -1"/>
+    <limit effort="0" lower="-3.22885911619" upper="3.22885911619" velocity="2.72271363311"/>
+  </joint>
+
+  <link name="gantry_link_1">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="2"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/visual/link_1.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/collision/link_1.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gantry_joint_a2" type="revolute">
+    <origin rpy="0 0 0" xyz="0.26 0 0"/>
+    <parent link="gantry_link_1"/>
+    <child link="gantry_link_2"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="0" lower="-2.70526034059" upper="0.610865238198" velocity="2.72271363311"/>
+  </joint>
+
+  <link name="gantry_link_2">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="2"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/visual/link_2.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/collision/link_2.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gantry_joint_a3" type="revolute">
+    <origin rpy="0 0 0" xyz="0.68 0 0"/>
+    <parent link="gantry_link_2"/>
+    <child link="gantry_link_3"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="0" lower="-2.26892802759" upper="2.68780704807" velocity="2.72271363311"/>
+  </joint>
+
+  <link name="gantry_link_3">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="2"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/visual/link_3.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/collision/link_3.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gantry_joint_a4" type="revolute">
+    <origin rpy="0 0 0" xyz="0.67 0 -0.035"/>
+    <parent link="gantry_link_3"/>
+    <child link="gantry_link_4"/>
+    <axis xyz="-1 0 0"/>
+    <limit effort="0" lower="-6.10865238198" upper="6.10865238198" velocity="5.75958653158"/>
+  </joint>
+
+  <link name="gantry_link_4">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="2"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/visual/link_4.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/collision/link_4.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gantry_joint_a5" type="revolute">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="gantry_link_4"/>
+    <child link="gantry_link_5"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="0" lower="-2.26892802759" upper="2.26892802759" velocity="5.75958653158"/>
+  </joint>
+
+  <link name="gantry_link_5">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="2"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/visual/link_5.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/collision/link_5.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gantry_joint_a6" type="revolute">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="gantry_link_5"/>
+    <child link="gantry_link_6"/>
+    <axis xyz="-1 0 0"/>
+    <limit effort="0" lower="-6.10865238198" upper="6.10865238198" velocity="10.7337748998"/>
+  </joint>
+
+  <link name="gantry_link_6">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="2"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/visual/link_6.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://kuka_kr16_support/meshes/kr16_2/collision/link_6.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="gantry_joint_a6-tool0" type="fixed">
+    <parent link="gantry_link_6"/>
+    <child link="gantry_tool0"/>
+    <origin rpy="0 1.57079632679 0" xyz="0.158 0 0"/>
+  </joint>
+
+  <link name="gantry_tool0"/> -->
+  <robot name="gantry" xmlns:xacro="http://wiki.ros.org/xacro">
+    <link name="gantry_link_base">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="100.0"/>
+        <inertia ixx="71.623734" ixy="3.1e-05" ixz="0" iyy="788.87262" iyz="1.2e-05" izz="851.100647"/>
+      </inertial>
+      <visual name="gantry_visual_base">
+        <origin rpy="1.57079632679 -1.57079632679 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+        <material name="gantry_03___Default.001"/>
+      </visual>
+      <collision name="gantry_collision_base">
+        <origin rpy="1.57079632679 -1.57079632679 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="gantry_joint_e1" type="prismatic">
+      <origin rpy="0 0 0" xyz="-2.570369 -0.057403 0.844145"/>
+      <parent link="gantry_link_base"/>
+      <child link="gantry_link_leg"/>
+      <axis xyz="0 0 1.0"/>
+      <limit effort="1.0" lower="0" upper="1.54" velocity="0.5"/>
+    </joint>
+
+    <link name="gantry_link_leg">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0.114805 -0.069116"/>
+        <mass value="1000.0"/>
+        <inertia ixx="1880.551147" ixy="0.000232" ixz="0" iyy="7958.77002" iyz="-13.379694" izz="6216.929688"/>
+      </inertial>
+      <visual name="gantry_visual_leg">
+        <origin rpy="1.57079632679 -1.57079632679 0" xyz="0 0.114805 -0.069116"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+        <material name="gantry_01___Default.001"/>
+      </visual>
+      <collision name="gantry_collision_leg">
+        <origin rpy="1.57079632679 -1.57079632679 0" xyz="0.000315 0.114805 -0.069116"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="gantry_joint_e2" type="prismatic">
+      <origin rpy="-1.57079632679 -1.57079632679 0" xyz="-1.277963 2.407403 -0.476427"/>
+      <parent link="gantry_link_leg"/>
+      <child link="gantry_link_trolley"/>
+      <axis xyz="0 0 1.0"/>
+      <limit effort="1.0" lower="0" upper="4.7" velocity="0.83"/>
+    </joint>
+
+    <link name="gantry_link_trolley">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="100.0"/>
+        <inertia ixx="15.599652" ixy="1.71094" ixz="1.886528" iyy="9.19625" iyz="0.938975" izz="14.022485"/>
+      </inertial>
+      <visual name="gantry_visual_trolley">
+        <origin rpy="-3.14159265359 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+        <material name="gantry_02___Default.001"/>
+      </visual>
+      <collision name="gantry_collision_trolley">
+        <origin rpy="1.57079632679 0 0" xyz="-0.020567 0.254046 -0.042038"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="gantry_joint_e3" type="prismatic">
+      <origin rpy="1.57079632679 0 0" xyz="-0.164527 -0.651668 -0.053205"/>
+      <parent link="gantry_link_trolley"/>
+      <child link="gantry_link_arm"/>
+      <axis xyz="0 0 1.0"/>
+      <limit effort="1.0" lower="-1.6" upper="0" velocity="0.55"/>
+    </joint>
+    <link name="gantry_link_arm">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="100.0"/>
+        <inertia ixx="77.157539" ixy="-0.43952" ixz="-0.013708" iyy="77.235046" iyz="-8e-06" izz="1.060431"/>
+      </inertial>
+      <visual name="gantry_visual_arm">
+        <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+        <material name="gantry_VMtl98"/>
+      </visual>
+      <collision name="gantry_collision_arm">
+        <origin rpy="0 0 0" xyz="0 0 1.34717"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="gantry_robot_connection_joint" type="fixed">
+      <origin rpy="-3.14159265359 0 0" xyz="-0.026405 0.000343 -1.392678"/>
+      <parent link="gantry_link_arm"/>
+      <child link="gantry_robot_connection"/>
+    </joint>
+    <link name="gantry_robot_connection">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="2"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      </link>
+    <joint name="gantry_gantry_robot" type="fixed">
+      <origin rpy="0 0 1.57079632679" xyz="0 0 0"/>
+      <parent link="gantry_robot_connection"/>
+      <child link="gantry_base_link"/>
+    </joint>
+
+    <link name="gantry_base_link">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="2"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="gantry_joint_a1" type="revolute">
+      <origin rpy="0 0 0" xyz="0 0 0.675"/>
+      <parent link="gantry_base_link"/>
+      <child link="gantry_link_1"/>
+      <axis xyz="0 0 -1"/>
+      <limit effort="0" lower="-3.22885911619" upper="3.22885911619" velocity="2.72271363311"/>
+    </joint>
+
+    <link name="gantry_link_1">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="2"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="gantry_joint_a2" type="revolute">
+      <origin rpy="0 0 0" xyz="0.26 0 0"/>
+      <parent link="gantry_link_1"/>
+      <child link="gantry_link_2"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="0" lower="-2.70526034059" upper="0.610865238198" velocity="2.72271363311"/>
+    </joint>
+
+    <link name="gantry_link_2">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="2"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="gantry_joint_a3" type="revolute">
+      <origin rpy="0 0 0" xyz="0.68 0 0"/>
+      <parent link="gantry_link_2"/>
+      <child link="gantry_link_3"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="0" lower="-2.26892802759" upper="2.68780704807" velocity="2.72271363311"/>
+    </joint>
+
+    <link name="gantry_link_3">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="2"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="gantry_joint_a4" type="revolute">
+      <origin rpy="0 0 0" xyz="0.67 0 -0.035"/>
+      <parent link="gantry_link_3"/>
+      <child link="gantry_link_4"/>
+      <axis xyz="-1 0 0"/>
+      <limit effort="0" lower="-6.10865238198" upper="6.10865238198" velocity="5.75958653158"/>
+    </joint>
+
+    <link name="gantry_link_4">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="2"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="gantry_joint_a5" type="revolute">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <parent link="gantry_link_4"/>
+      <child link="gantry_link_5"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="0" lower="-2.26892802759" upper="2.26892802759" velocity="5.75958653158"/>
+    </joint>
+
+    <link name="gantry_link_5">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="2"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="gantry_joint_a6" type="revolute">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <parent link="gantry_link_5"/>
+      <child link="gantry_link_6"/>
+      <axis xyz="-1 0 0"/>
+      <limit effort="0" lower="-6.10865238198" upper="6.10865238198" velocity="10.7337748998"/>
+    </joint>
+
+    <link name="gantry_link_6">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="2"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.104" radius="0.06"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="gantry_joint_a6-tool0" type="fixed">
+      <parent link="gantry_link_6"/>
+      <child link="gantry_tool0"/>
+      <origin rpy="0 1.57079632679 0" xyz="0.158 0 0"/>
+    </joint>
+
+    <link name="gantry_tool0"/>
+
 </robot>

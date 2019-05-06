@@ -4,40 +4,7 @@
 <!-- |    EDITING THIS FILE BY HAND IS NOT RECOMMENDED                                 | -->
 <!-- =================================================================================== -->
 <robot name="ur5" xmlns:xacro="http://ros.org/wiki/xacro">
-  <gazebo>
-    <plugin filename="libgazebo_ros_control.so" name="ros_control">
-      <!--robotNamespace>/</robotNamespace-->
-      <!--robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType-->
-    </plugin>
-    <!--
-    <plugin name="gazebo_ros_power_monitor_controller" filename="libgazebo_ros_power_monitor.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>1.0</updateRate>
-      <timeout>5</timeout>
-      <powerStateTopic>power_state</powerStateTopic>
-      <powerStateRate>10.0</powerStateRate>
-      <fullChargeCapacity>87.78</fullChargeCapacity>
-      <dischargeRate>-474</dischargeRate>
-      <chargeRate>525</chargeRate>
-      <dischargeVoltage>15.52</dischargeVoltage>
-      <chargeVoltage>16.41</chargeVoltage>
-    </plugin>
--->
-  </gazebo>
-  <!-- measured from model -->
-  <!--property name="shoulder_height" value="0.089159" /-->
-  <!--property name="shoulder_offset" value="0.13585" /-->
-  <!-- shoulder_offset - elbow_offset + wrist_1_length = 0.10915 -->
-  <!--property name="upper_arm_length" value="0.42500" /-->
-  <!--property name="elbow_offset" value="0.1197" /-->
-  <!-- CAD measured -->
-  <!--property name="forearm_length" value="0.39225" /-->
-  <!--property name="wrist_1_length" value="0.093" /-->
-  <!-- CAD measured -->
-  <!--property name="wrist_2_length" value="0.09465" /-->
-  <!-- In CAD this distance is 0.930, but in the spec it is 0.09465 -->
-  <!--property name="wrist_3_length" value="0.0823" /-->
-  <!-- manually measured -->
+
   <link name="base_link">
     <visual>
       <geometry>
@@ -90,7 +57,7 @@
     <parent link="shoulder_link"/>
     <child link="upper_arm_link"/>
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.13585 0.0"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="0 1 0"/>
     <limit effort="150.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.15"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
@@ -108,17 +75,17 @@
         <mesh filename="package://ur_description/meshes/ur5/collision/upperarm.stl"/>
       </geometry>
     </collision>
-  <!--  <inertial>
+    <inertial>
       <mass value="8.393"/>
       <origin rpy="0 0 0" xyz="0.0 0.0 0.28"/>
       <inertia ixx="0.22689067591" ixy="0.0" ixz="0.0" iyy="0.22689067591" iyz="0.0" izz="0.0151074"/>
-    </inertial> -->
+    </inertial>
   </link>
-  <joint name="elbow_joint" type="revolute">
+  <!-- <joint name="elbow_joint" type="revolute">
     <parent link="upper_arm_link"/>
     <child link="forearm_link"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.1197 0.425"/>
-    <axis xyz="0 -1.0 0"/>
+    <axis xyz="0 1 0"/>
     <limit effort="150.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.15"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
@@ -140,7 +107,7 @@
       <mass value="2.275"/>
       <origin rpy="0 0 0" xyz="0.0 0.0 0.25"/>
       <inertia ixx="0.049443313556" ixy="0.0" ixz="0.0" iyy="0.049443313556" iyz="0.0" izz="0.004095"/>
-    </inertial> 
+    </inertial>
   </link>
   <joint name="wrist_1_joint" type="revolute">
     <parent link="forearm_link"/>
@@ -292,20 +259,15 @@
     <actuator name="wrist_3_motor">
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
-  </transmission>
-  <!-- nothing to do here at the moment -->
-  <!-- ROS base_link to UR 'Base' Coordinates transform -->
+
   <link name="base"/>
   <joint name="base_link-base_fixed_joint" type="fixed">
-    <!-- NOTE: this rotation is only needed as long as base_link itself is
-                 not corrected wrt the real robot (ie: rotated over 180
-                 degrees)
-      -->
+
     <origin rpy="0 0 -3.14159265359" xyz="0 0 0"/>
     <parent link="base_link"/>
     <child link="base"/>
   </joint>
-  <!-- Frame coincident with all-zeros TCP on UR controller -->
+  <!-- Frame coincident with all-zeros TCP on UR controller 
   <link name="tool0"/>
   <joint name="wrist_3_link-tool0_fixed_joint" type="fixed">
     <origin rpy="-1.57079632679 0 0" xyz="0 0.0823 0"/>
@@ -317,5 +279,5 @@
     <parent link="world"/>
     <child link="base_link"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-  </joint>
+  </joint> -->
 </robot>

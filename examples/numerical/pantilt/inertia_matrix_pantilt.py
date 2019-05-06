@@ -11,30 +11,30 @@ import pybullet as pb
 
 
 root = 'base_link'
-tip = 'wrist_3_link'
-path_to_urdf = '/home/lmjohann/urdf2casadi/examples/urdf/ur5_rbdl.urdf'
+tip = 'tilt_link'
+path_to_urdf = '/home/lmjohann/urdf2casadi/examples/urdf/pantilt.urdf'
 
 #get robot models
 
 #kdl
-ok, ur_tree = kdlurdf.treeFromFile(path_to_urdf)
-ur_chain = ur_tree.getChain(root,tip)
+ok, snake_tree = kdlurdf.treeFromFile(path_to_urdf)
+snake_chain = snake_tree.getChain(root,tip)
 
 #rbdl
-urmodel = rbdl.loadModel(path_to_urdf)
+snake_rbdl = rbdl.loadModel(path_to_urdf)
 
 #u2c
-ur5 = u2c.URDFparser()
-robot_desc = ur5.from_file(path_to_urdf)
+snake = u2c.URDFparser()
+robot_desc = snake.from_file(path_to_urdf)
 
 #pybullet
 sim = pb.connect(pb.DIRECT)
-pbmodel = pb.loadURDF(path_to_urdf, useFixedBase=True)
+snake_pb = pb.loadURDF(path_to_urdf, useFixedBase=True, flags = pb.URDF_USE_INERTIA_FROM_FILE)
 pb.setGravity(0, 0, -9.81)
 
 #joint info
-jointlist, names, q_max, q_min = ur5.get_joint_info(root, tip)
-n_joints = ur5.get_n_joints(root, tip)
+jointlist, names, q_max, q_min = snake.get_joint_info(root, tip)
+n_joints = snake.get_n_joints(root, tip)
 
 
 #declarations
@@ -50,7 +50,7 @@ M_kdl = kdl.JntSpaceInertiaMatrix(n_joints)
 q = [None]*n_joints
 qdot = [None]*n_joints
 zeros_pb = [None]*n_joints
-M_sym = ur5.get_inertia_matrix_crba(root, tip)
+M_sym = snake.get_inertia_matrix_crba(root, tip)
 
 #rbdl
 q_np = np.zeros(n_joints)
@@ -62,6 +62,8 @@ error_kdl_rbdl = np.zeros((n_joints, n_joints))
 error_kdl_u2c = np.zeros((n_joints, n_joints))
 error_rbdl_u2c = np.zeros((n_joints, n_joints))
 error_pb_u2c = np.zeros((n_joints, n_joints))
+error_pb_kdl = np.zeros((n_joints, n_joints))
+error_pb_rbdl = np.zeros((n_joints, n_joints))
 
 
 def u2c2np(asd):
@@ -85,28 +87,28 @@ for i in range(n_itr):
         q_np[j] = q[j]
 
 
-    rbdl.CompositeRigidBodyAlgorithm(urmodel, q_np, M_rbdl)
-    kdl.ChainDynParam(ur_chain, gravity_kdl).JntToMass(q_kdl, M_kdl)
-    M_pb = pb.calculateMassMatrix(pbmodel, q)
+    rbdl.CompositeRigidBodyAlgorithm(snake_rbdl, q_np, M_rbdl)
+    kdl.ChainDynParam(snake_chain, gravity_kdl).JntToMass(q_kdl, M_kdl)
+    M_pb = pb.calculateMassMatrix(snake_pb, q)
     M_u2c = M_sym(q)
 
     for row_idx in range(n_joints):
         for col_idx in range(n_joints):
             error_kdl_u2c[row_idx][col_idx] += np.absolute(M_kdl[row_idx,col_idx] - u2c2np(M_u2c[row_idx, col_idx]))
             error_rbdl_u2c[row_idx][col_idx] += np.absolute((M_rbdl[row_idx,col_idx]) - u2c2np(M_u2c[row_idx, col_idx]))
-            error_pb_u2c[row_idx][col_idx] += np.absolute((M_pb[row_idx][col_idx]) - u2c2np(M_u2c[row_idx, col_idx]))
+            error_pb_u2c[row_idx][col_idx] += np.absolute(list2np(M_pb[row_idx][col_idx]) - u2c2np(M_u2c[row_idx, col_idx]))
             error_kdl_rbdl[row_idx][col_idx] += np.absolute((M_rbdl[row_idx,col_idx]) - list2np(M_kdl[row_idx, col_idx]))
+            error_pb_kdl[row_idx][col_idx] += np.absolute(list2np(M_pb[row_idx][col_idx]) - list2np(M_kdl[row_idx, col_idx]))
+            error_pb_rbdl[row_idx][col_idx] += np.absolute((M_rbdl[row_idx,col_idx]) - list2np(M_pb[row_idx][col_idx]))
 
 
-print M_u2c[4,4]
-print M_rbdl[4,4]
-print M_kdl[4,4]
-print M_pb[4][4]
 
 sum_error_kdl_rbdl = 0
 sum_error_kdl_u2c = 0
 sum_error_rbdl_u2c = 0
 sum_error_pb_u2c = 0
+sum_error_pb_kdl = 0
+sum_error_pb_rbdl = 0
 
 
 for row in range(n_joints):
@@ -115,8 +117,12 @@ for row in range(n_joints):
         sum_error_kdl_u2c += error_kdl_u2c[row][col]
         sum_error_rbdl_u2c += error_rbdl_u2c[row][col]
         sum_error_pb_u2c += error_pb_u2c[row][col]
+        sum_error_pb_kdl += error_pb_kdl[row][col]
+        sum_error_pb_rbdl += error_pb_rbdl[row][col]
 
 print "\nSum of errors KDL vs. RBDL for", n_itr, "iterations:\n", sum_error_kdl_rbdl
 print "\nSum of errors KDL vs. U2C for", n_itr, "iterations:\n", sum_error_kdl_u2c
 print "\nSum of errors RBDL vs. U2C for", n_itr, "iterations:\n",sum_error_rbdl_u2c
 print "\nSum of errors pybullet vs. U2C for", n_itr, "iterations:\n", sum_error_pb_u2c
+print "\nSum of errors pybullet vs. KDL for", n_itr, "iterations:\n", sum_error_pb_kdl
+print "\nSum of errors pybullet vs. RBDL for", n_itr, "iterations:\n", sum_error_pb_rbdl

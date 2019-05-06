@@ -6,28 +6,28 @@ import os
 import urdf2casadi.urdfparser as u2c
 import pybullet as pb
 
-path_to_urdf = "/home/lmjohann/urdf2casadi/examples/urdf/ur5_rbdl.urdf"
+path_to_urdf = "/home/lmjohann/urdf2casadi/examples/urdf/snake_robot.urdf"
 root = "base_link"
-tip = "upper_arm_link"
+tip = "link16"
 
 #get robot models
 
 
 #rbdl
-urmodel = rbdl.loadModel(path_to_urdf)
+snake_rbdl = rbdl.loadModel(path_to_urdf)
 
 #u2c
-ur5 = u2c.URDFparser()
-robot_desc = ur5.from_file(path_to_urdf)
+snake = u2c.URDFparser()
+robot_desc = snake.from_file(path_to_urdf)
 
 #pybullet
 sim = pb.connect(pb.DIRECT)
-pbmodel = pb.loadURDF(path_to_urdf, useFixedBase=True, flags = pb.URDF_USE_INERTIA_FROM_FILE)
+snake_pb = pb.loadURDF(path_to_urdf, useFixedBase=True, flags = pb.URDF_USE_INERTIA_FROM_FILE)
 pb.setGravity(0, 0, -9.81)
 
 #joint info
-jointlist, names, q_max, q_min = ur5.get_joint_info(root, tip)
-n_joints = ur5.get_n_joints(root, tip)
+jointlist, names, q_max, q_min = snake.get_joint_info(root, tip)
+n_joints = snake.get_n_joints(root, tip)
 
 
 
@@ -36,7 +36,7 @@ q = [None]*n_joints
 qdot = [None]*n_joints
 qddot = [None]*n_joints
 gravity_u2c = [0, 0, -9.81]
-id_sym = ur5.get_inverse_dynamics_rnea(root, tip, gravity_u2c)
+id_sym = snake.get_inverse_dynamics_rnea(root, tip, gravity_u2c)
 
 #rbdl
 q_np = np.zeros(n_joints)
@@ -67,8 +67,8 @@ for i in range(n_itr):
         qddot_np[j] = qddot[j]
 
 
-    rbdl.InverseDynamics(urmodel, q_np, qdot_np, qddot_np, id_rbdl)
-    id_pb = pb.calculateInverseDynamics(pbmodel, q, qdot, qddot)
+    rbdl.InverseDynamics(snake_rbdl, q_np, qdot_np, qddot_np, id_rbdl)
+    id_pb = pb.calculateInverseDynamics(snake_pb, q, qdot, qddot)
     id_u2c = id_sym(q, qdot, qddot)
 
     for tau_idx in range(n_joints):

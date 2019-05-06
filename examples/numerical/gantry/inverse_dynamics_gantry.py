@@ -6,11 +6,11 @@ import os
 import urdf2casadi.urdfparser as u2c
 
 
-root = 'gantry_root'
+root = 'gantry_link_base'
 tip = 'gantry_tool0'
-urmodel = rbdl.loadModel("gantry.urdf")
+urmodel = rbdl.loadModel("/home/lmjohann/urdf2casadi/examples/urdf/gantry.urdf")
 gantry = u2c.URDFparser()
-gantry.from_file("gantry.urdf")
+gantry.from_file("/home/lmjohann/urdf2casadi/examples/urdf/gantry.urdf")
 
 jointlist, names, q_max, q_min = gantry.get_joint_info(root, tip)
 n_joints = gantry.get_n_joints(root, tip)

@@ -4,17 +4,17 @@ import os # For current directory
 import urdf2casadi.urdfparser as u2c
 import numpy as np
 import PyKDL as kdl
-import kdl_parser.kdl_parser_py.kdl_parser_py.urdf as kdlurdf
+import kdl_parser_py.urdf as kdlurdf
 
 
 root = 'gantry_root'
 tip = 'gantry_tool0'
 
-ok, ur_tree = kdlurdf.treeFromFile('/home/lillmaria/urdf2casadi/examples/urdf/thrivaldi.urdf')
+ok, ur_tree = kdlurdf.treeFromFile('/home/lmjohann/urdf2casadi/examples/urdf/thrivaldi.urdf')
 gantry_chain = ur_tree.getChain(root,tip)
 
 gantry = u2c.URDFparser()
-gantry.from_file("/home/lillmaria/urdf2casadi/examples/urdf/thrivaldi.urdf")
+gantry.from_file("/home/lmjohann/urdf2casadi/examples/urdf/thrivaldi.urdf")
 
 
 jointlist, names, q_max, q_min = gantry.get_joint_info(root, tip)
