@@ -11,17 +11,14 @@ import pybullet as pb
 
 
 root = 'base_link'
-tip = 'wrist_3_link'
-path_to_urdf = '/home/lmjohann/urdf2casadi/examples/urdf/ur5_rbdl.urdf'
-
-#get robot models
-
+tip = 'tool0'
+path_to_urdf = '/home/lmjohann/urdf2casadi/examples/urdf/ur5_mod.urdf'
 #kdl
-ok, ur_tree = kdlurdf.treeFromFile(path_to_urdf)
-ur_chain = ur_tree.getChain(root,tip)
+ok, ur5_tree = kdlurdf.treeFromFile(path_to_urdf)
+ur5_chain = ur5_tree.getChain(root,tip)
 
 #rbdl
-urmodel = rbdl.loadModel(path_to_urdf)
+ur5_rbdl = rbdl.loadModel(path_to_urdf)
 
 #u2c
 ur5 = u2c.URDFparser()
@@ -29,7 +26,7 @@ robot_desc = ur5.from_file(path_to_urdf)
 
 #pybullet
 sim = pb.connect(pb.DIRECT)
-pbmodel = pb.loadURDF(path_to_urdf, useFixedBase=True)
+ur5_pb = pb.loadURDF(path_to_urdf, useFixedBase=True, flags = pb.URDF_USE_INERTIA_FROM_FILE)
 pb.setGravity(0, 0, -9.81)
 
 #joint info
@@ -62,6 +59,8 @@ error_kdl_rbdl = np.zeros((n_joints, n_joints))
 error_kdl_u2c = np.zeros((n_joints, n_joints))
 error_rbdl_u2c = np.zeros((n_joints, n_joints))
 error_pb_u2c = np.zeros((n_joints, n_joints))
+error_pb_kdl = np.zeros((n_joints, n_joints))
+error_pb_rbdl = np.zeros((n_joints, n_joints))
 
 
 def u2c2np(asd):
@@ -85,28 +84,28 @@ for i in range(n_itr):
         q_np[j] = q[j]
 
 
-    rbdl.CompositeRigidBodyAlgorithm(urmodel, q_np, M_rbdl)
-    kdl.ChainDynParam(ur_chain, gravity_kdl).JntToMass(q_kdl, M_kdl)
-    M_pb = pb.calculateMassMatrix(pbmodel, q)
+    rbdl.CompositeRigidBodyAlgorithm(ur5_rbdl, q_np, M_rbdl)
+    kdl.ChainDynParam(ur5_chain, gravity_kdl).JntToMass(q_kdl, M_kdl)
+    M_pb = pb.calculateMassMatrix(ur5_pb, q)
     M_u2c = M_sym(q)
 
     for row_idx in range(n_joints):
         for col_idx in range(n_joints):
             error_kdl_u2c[row_idx][col_idx] += np.absolute(M_kdl[row_idx,col_idx] - u2c2np(M_u2c[row_idx, col_idx]))
             error_rbdl_u2c[row_idx][col_idx] += np.absolute((M_rbdl[row_idx,col_idx]) - u2c2np(M_u2c[row_idx, col_idx]))
-            error_pb_u2c[row_idx][col_idx] += np.absolute((M_pb[row_idx][col_idx]) - u2c2np(M_u2c[row_idx, col_idx]))
+            error_pb_u2c[row_idx][col_idx] += np.absolute(list2np(M_pb[row_idx][col_idx]) - u2c2np(M_u2c[row_idx, col_idx]))
             error_kdl_rbdl[row_idx][col_idx] += np.absolute((M_rbdl[row_idx,col_idx]) - list2np(M_kdl[row_idx, col_idx]))
+            error_pb_kdl[row_idx][col_idx] += np.absolute(list2np(M_pb[row_idx][col_idx]) - list2np(M_kdl[row_idx, col_idx]))
+            error_pb_rbdl[row_idx][col_idx] += np.absolute((M_rbdl[row_idx,col_idx]) - list2np(M_pb[row_idx][col_idx]))
 
 
-print M_u2c[4,4]
-print M_rbdl[4,4]
-print M_kdl[4,4]
-print M_pb[4][4]
 
 sum_error_kdl_rbdl = 0
 sum_error_kdl_u2c = 0
 sum_error_rbdl_u2c = 0
 sum_error_pb_u2c = 0
+sum_error_pb_kdl = 0
+sum_error_pb_rbdl = 0
 
 
 for row in range(n_joints):
@@ -115,8 +114,12 @@ for row in range(n_joints):
         sum_error_kdl_u2c += error_kdl_u2c[row][col]
         sum_error_rbdl_u2c += error_rbdl_u2c[row][col]
         sum_error_pb_u2c += error_pb_u2c[row][col]
+        sum_error_pb_kdl += error_pb_kdl[row][col]
+        sum_error_pb_rbdl += error_pb_rbdl[row][col]
 
 print "\nSum of errors KDL vs. RBDL for", n_itr, "iterations:\n", sum_error_kdl_rbdl
 print "\nSum of errors KDL vs. U2C for", n_itr, "iterations:\n", sum_error_kdl_u2c
 print "\nSum of errors RBDL vs. U2C for", n_itr, "iterations:\n",sum_error_rbdl_u2c
 print "\nSum of errors pybullet vs. U2C for", n_itr, "iterations:\n", sum_error_pb_u2c
+print "\nSum of errors pybullet vs. KDL for", n_itr, "iterations:\n", sum_error_pb_kdl
+print "\nSum of errors pybullet vs. RBDL for", n_itr, "iterations:\n", sum_error_pb_rbdl

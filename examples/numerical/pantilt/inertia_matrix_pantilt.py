@@ -14,7 +14,6 @@ root = 'base_link'
 tip = 'tilt_link'
 path_to_urdf = '/home/lmjohann/urdf2casadi/examples/urdf/pantilt.urdf'
 
-#get robot models
 
 #kdl
 ok, snake_tree = kdlurdf.treeFromFile(path_to_urdf)

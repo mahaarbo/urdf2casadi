@@ -6,15 +6,15 @@ import os
 import urdf2casadi.urdfparser as u2c
 import pybullet as pb
 
-path_to_urdf = "/home/lmjohann/urdf2casadi/examples/urdf/ur5_rbdl.urdf"
+path_to_urdf = "/home/lmjohann/urdf2casadi/examples/urdf/ur5_mod.urdf"
 root = "base_link"
-tip = "upper_arm_link"
+tip = "tool0"
 
 #get robot models
 
 
 #rbdl
-urmodel = rbdl.loadModel(path_to_urdf)
+ur5_rbdl = rbdl.loadModel(path_to_urdf)
 
 #u2c
 ur5 = u2c.URDFparser()
@@ -22,7 +22,7 @@ robot_desc = ur5.from_file(path_to_urdf)
 
 #pybullet
 sim = pb.connect(pb.DIRECT)
-pbmodel = pb.loadURDF(path_to_urdf, useFixedBase=True, flags = pb.URDF_USE_INERTIA_FROM_FILE)
+ur5_pb = pb.loadURDF(path_to_urdf, useFixedBase=True, flags = pb.URDF_USE_INERTIA_FROM_FILE)
 pb.setGravity(0, 0, -9.81)
 
 #joint info
@@ -67,8 +67,8 @@ for i in range(n_itr):
         qddot_np[j] = qddot[j]
 
 
-    rbdl.InverseDynamics(urmodel, q_np, qdot_np, qddot_np, id_rbdl)
-    id_pb = pb.calculateInverseDynamics(pbmodel, q, qdot, qddot)
+    rbdl.InverseDynamics(ur5_rbdl, q_np, qdot_np, qddot_np, id_rbdl)
+    id_pb = pb.calculateInverseDynamics(ur5_pb, q, qdot, qddot)
     id_u2c = id_sym(q, qdot, qddot)
 
     for tau_idx in range(n_joints):

@@ -13,8 +13,8 @@ import pybullet as pb
 #tip = "kuka_arm_7_link"
 
 root = 'base_link'
-tip = 'wrist_3_link'
-path_to_urdf = '/home/lmjohann/urdf2casadi/examples/urdf/ur5_modified.urdf'
+tip = 'tool0'
+path_to_urdf = '/home/lmjohann/urdf2casadi/examples/urdf/ur5_mod.urdf'
 
 #get robot models
 
@@ -64,10 +64,12 @@ zeros_rbdl = np.zeros(n_joints)
 
 
 
-g_error_kdl_rbdl = np.zeros(n_joints)
-g_error_kdl_u2c = np.zeros(n_joints)
-g_error_rbdl_u2c = np.zeros(n_joints)
-g_error_pb_u2c = np.zeros(n_joints)
+error_kdl_rbdl = np.zeros(n_joints)
+error_kdl_u2c = np.zeros(n_joints)
+error_rbdl_u2c = np.zeros(n_joints)
+error_pb_u2c = np.zeros(n_joints)
+error_pb_kdl = np.zeros(n_joints)
+error_pb_rbdl = np.zeros(n_joints)
 
 
 def u2c2np(asd):
@@ -91,24 +93,32 @@ for i in range(n_itr):
     #print g_u2c
 
     for tau_idx in range(n_joints):
-        g_error_kdl_rbdl[tau_idx] += np.absolute((list2np(g_kdl[tau_idx]) - g_rbdl[tau_idx]))
-        g_error_kdl_u2c[tau_idx] += np.absolute((list2np(g_kdl[tau_idx]) - u2c2np(g_u2c[tau_idx])))
-        g_error_rbdl_u2c[tau_idx] += np.absolute((u2c2np(g_u2c[tau_idx]) - g_rbdl[tau_idx]))
-        g_error_pb_u2c[tau_idx] += np.absolute((u2c2np(g_u2c[tau_idx]) - list2np(g_pb[tau_idx])))
+        error_kdl_rbdl[tau_idx] += np.absolute((list2np(g_kdl[tau_idx]) - g_rbdl[tau_idx]))
+        error_kdl_u2c[tau_idx] += np.absolute((list2np(g_kdl[tau_idx]) - u2c2np(g_u2c[tau_idx])))
+        error_rbdl_u2c[tau_idx] += np.absolute((u2c2np(g_u2c[tau_idx]) - g_rbdl[tau_idx]))
+        error_pb_u2c[tau_idx] += np.absolute((u2c2np(g_u2c[tau_idx]) - list2np(g_pb[tau_idx])))
+        error_pb_kdl[tau_idx] += np.absolute((list2np(g_kdl[tau_idx]) - list2np(g_pb[tau_idx])))
+        error_pb_rbdl[tau_idx] += np.absolute(g_rbdl[tau_idx] - list2np(g_pb[tau_idx]))
 
 
 sum_error_kdl_rbdl = 0
 sum_error_kdl_u2c = 0
 sum_error_rbdl_u2c = 0
 sum_error_pb_u2c = 0
+sum_error_pb_kdl = 0
+sum_error_pb_rbdl = 0
 
 for err in range(n_joints):
-    sum_error_kdl_rbdl += g_error_kdl_rbdl[err]
-    sum_error_kdl_u2c += g_error_kdl_u2c[err]
-    sum_error_rbdl_u2c += g_error_rbdl_u2c[err]
-    sum_error_pb_u2c += g_error_pb_u2c[err]
+    sum_error_kdl_rbdl += error_kdl_rbdl[err]
+    sum_error_kdl_u2c += error_kdl_u2c[err]
+    sum_error_rbdl_u2c += error_rbdl_u2c[err]
+    sum_error_pb_u2c += error_pb_u2c[err]
+    sum_error_pb_kdl += error_pb_kdl[err]
+    sum_error_pb_rbdl += error_pb_rbdl[err]
 
 print "\nSum of errors KDL vs. RBDL for", n_itr, "iterations:\n", sum_error_kdl_rbdl
 print "\nSum of errors KDL vs. U2C for", n_itr, "iterations:\n", sum_error_kdl_u2c
 print "\nSum of errors RBDL vs. U2C for", n_itr, "iterations:\n",sum_error_rbdl_u2c
 print "\nSum of errors pybullet vs. U2C for", n_itr, "iterations:\n", sum_error_pb_u2c
+print "\nSum of errors pybullet vs. KDL for", n_itr, "iterations:\n",sum_error_pb_kdl
+print "\nSum of errors pybullet vs. RBDL for", n_itr, "iterations:\n", sum_error_pb_rbdl
