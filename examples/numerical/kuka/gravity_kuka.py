@@ -11,7 +11,7 @@ tip = 'link60'
 #root = "calib_kuka_arm_base_link"
 #tip = "kuka_arm_7_link"
 
-ok, ur_tree = kdlurdf.treeFromFile('/home/lmjohann/urdf2casadi/examples/timing/urdf4timing/60dof.urdf')
+ok, ur_tree = kdlurdf.treeFromFile('/home/lmjohann/urdf2casadi/examples/timing/urdf4timing/kuka.urdf')
 #ok, ur_tree = kdlurdf.treeFromFile('/home/lmjohann/urdf2casadi/examples/urdf/kuka.urdf')
 kuka_chain = ur_tree.getChain(root,tip)
 

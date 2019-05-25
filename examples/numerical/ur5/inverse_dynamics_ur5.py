@@ -11,14 +11,13 @@ root = "base_link"
 tip = "tool0"
 
 #get robot models
-
-
 #rbdl
+
 ur5_rbdl = rbdl.loadModel(path_to_urdf)
 
 #u2c
 ur5 = u2c.URDFparser()
-robot_desc = ur5.from_file(path_to_urdf)
+ur5.from_file(path_to_urdf)
 
 #pybullet
 sim = pb.connect(pb.DIRECT)
@@ -28,7 +27,6 @@ pb.setGravity(0, 0, -9.81)
 #joint info
 jointlist, names, q_max, q_min = ur5.get_joint_info(root, tip)
 n_joints = ur5.get_n_joints(root, tip)
-
 
 
 #u2c & pybullet

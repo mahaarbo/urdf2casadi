@@ -18,7 +18,7 @@ snake_rbdl = rbdl.loadModel(path_to_urdf)
 
 #u2c
 snake = u2c.URDFparser()
-robot_desc = snake.from_file(path_to_urdf)
+snake.from_file(path_to_urdf)
 
 #pybullet
 sim = pb.connect(pb.DIRECT)

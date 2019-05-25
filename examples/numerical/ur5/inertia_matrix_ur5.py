@@ -22,7 +22,7 @@ ur5_rbdl = rbdl.loadModel(path_to_urdf)
 
 #u2c
 ur5 = u2c.URDFparser()
-robot_desc = ur5.from_file(path_to_urdf)
+ur5.from_file(path_to_urdf)
 
 #pybullet
 sim = pb.connect(pb.DIRECT)
