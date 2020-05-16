@@ -2,6 +2,7 @@
 import casadi as cs
 import numpy as np
 
+
 def revolute(xyz, rpy, axis, qi):
     """Gives a casadi function for the quaternion. [xyz, w] form."""
     roll, pitch, yaw = rpy
@@ -31,6 +32,7 @@ def revolute(xyz, rpy, axis, qi):
     # Resulting quaternion
     return product(q_or, q_j)
 
+
 def product(quat0, quat1):
     """Returns the quaternion product of q0 and q1."""
     quat = cs.SX.zeros(4)
@@ -41,6 +43,7 @@ def product(quat0, quat1):
     quat[2] = w0*z1 + x0*y1 - y0*x1 + z0*w1
     quat[3] = w0*w1 - x0*x1 - y0*y1 - z0*z1
     return quat
+
 
 def numpy_rpy(roll, pitch, yaw):
     """Returns a quaternion ([x,y,z,w], w scalar) from roll pitch yaw ZYX
@@ -73,6 +76,7 @@ def numpy_product(quat0, quat1):
     quat[2] = w0*z1 + x0*y1 - y0*x1 + z0*w1
     quat[3] = w0*w1 - x0*x1 - y0*y1 - z0*z1
     return quat
+
 
 def numpy_ravani_roth_dist(q1, q2):
     """Quaternion distance designed by ravani and roth.

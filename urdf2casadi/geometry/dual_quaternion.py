@@ -1,6 +1,8 @@
-"""Functions for getting casadi expressions for dual quaternions from joint type."""
+"""Functions for getting casadi expressions for dual quaternions from joint
+type."""
 import casadi as cs
 import numpy as np
+
 
 def product(Q, P):
     """Returns the dual quaternion product of two 8 element vectors
@@ -270,7 +272,7 @@ def revolute(xyz, rpy, axis, qi):
     w_ot = - 0.5*xyz[0]*x_or - 0.5*xyz[1]*y_or - 0.5*xyz[2]*z_or
     Q_o = [x_or, y_or, z_or, w_or, x_ot, y_ot, z_ot, w_ot]
     # Joint displacement rotation is from axis angle
-    #nax = cs.sqrt(axis[0]*axis[0] + axis[1]*axis[1] + axis[2]*axis[2])
+    # nax = cs.sqrt(axis[0]*axis[0] + axis[1]*axis[1] + axis[2]*axis[2])
     cqi = cs.cos(qi/2.0)
     sqi = cs.sin(qi/2.0)
     x_jr = axis[0]*sqi

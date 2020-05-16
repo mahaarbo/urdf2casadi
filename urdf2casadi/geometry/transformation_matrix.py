@@ -1,6 +1,8 @@
-"""Functions for getting casadi expressions for transformation matrices from joint type."""
+"""Functions for getting casadi expressions for transformation matrices from
+joint type."""
 import casadi as cs
 import numpy as np
+
 
 def prismatic(xyz, rpy, axis, qi):
     T = cs.SX.zeros(4, 4)
@@ -94,6 +96,7 @@ def revolute(xyz, rpy, axis, qi):
     T[3, 3] = 1.0
     return T
 
+
 def full_symbolic(xyz, rpy):
     """Gives a symbolic transformation matrix."""
     T = cs.SX.zeros(4, 4)
@@ -118,7 +121,7 @@ def full_symbolic(xyz, rpy):
     T[3, 3] = 1.0
     return T
 
-#to which file should this be placed?
+
 def numpy_normalize(v):
     nv = np.linalg.norm(v)
     if nv > 0.0:
@@ -127,7 +130,7 @@ def numpy_normalize(v):
         v[2] = v[2]/nv
     return v
 
-#and this?
+
 def numpy_skew_symmetric(v):
     """Returns a skew symmetric matrix from vector. p q r"""
     return np.array([[0, -v[2], v[1]],
@@ -147,6 +150,7 @@ def numpy_rotation_rpy(roll, pitch, yaw):
                      [sy*cp,  sy*sp*sr + cy*cr,  sy*sp*cr - cy*sr],
                      [  -sp,             cp*sr,             cp*cr]])
 
+
 def numpy_rpy(displacement, roll, pitch, yaw):
     """Homogeneous transformation matrix with roll pitch yaw."""
     T = np.zeros([4, 4])
@@ -155,7 +159,7 @@ def numpy_rpy(displacement, roll, pitch, yaw):
     T[3, 3] = 1.0
     return T
 
-#or this?
+
 def numpy_rotation_distance_from_identity(R1, R2):
     """Rotation matrix distance based on distance from identity matrix.
     See comparisons at: https://link.springer.com/content/pdf/10.1007%2Fs10851-009-0161-2.pdf"""
