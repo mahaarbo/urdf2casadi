@@ -508,10 +508,10 @@ class URDFparser(object):
         chain = self.robot_desc.get_chain(root, tip)
         if self.robot_desc is None:
             raise ValueError('Robot description not loaded from urdf')
-        joint_list, nvar, actuated_names, upper, lower = self.get_joint_info(
+        joint_list, actuated_names, upper, lower = self.get_joint_info(
             root,
             tip)
-
+        nvar = len(actuated_names)
         T_fk = cs.SX.eye(4)
         q = cs.SX.sym("q", nvar)
         quaternion_fk = cs.SX.zeros(4)
