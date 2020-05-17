@@ -4,199 +4,7 @@ import casadi as cs
 import numpy as np
 
 
-<<<<<<< HEAD:urdf2casadi/casadi_geom.py
-def T_prismatic(xyz, rpy, axis, qi):
-    T = cs.SX.zeros(4, 4)
-
-    # Origin rotation from RPY ZYX convention
-    cr = cs.cos(rpy[0])
-    sr = cs.sin(rpy[0])
-    cp = cs.cos(rpy[1])
-    sp = cs.sin(rpy[1])
-    cy = cs.cos(rpy[2])
-    sy = cs.sin(rpy[2])
-    r00 = cy*cp
-    r01 = cy*sp*sr - sy*cr
-    r02 = cy*sp*cr + sy*sr
-    r10 = sy*cp
-    r11 = sy*sp*sr + cy*cr
-    r12 = sy*sp*cr - cy*sr
-    r20 = -sp
-    r21 = cp*sr
-    r22 = cp*cr
-    p0 = r00*axis[0]*qi + r01*axis[1]*qi + r02*axis[2]*qi
-    p1 = r10*axis[0]*qi + r11*axis[1]*qi + r12*axis[2]*qi
-    p2 = r20*axis[0]*qi + r21*axis[1]*qi + r22*axis[2]*qi
-
-    # Homogeneous transformation matrix
-    T[0, 0] = r00
-    T[0, 1] = r01
-    T[0, 2] = r02
-    T[1, 0] = r10
-    T[1, 1] = r11
-    T[1, 2] = r12
-    T[2, 0] = r20
-    T[2, 1] = r21
-    T[2, 2] = r22
-    T[0, 3] = xyz[0] + p0
-    T[1, 3] = xyz[1] + p1
-    T[2, 3] = xyz[2] + p2
-    T[3, 3] = 1.0
-    return T
-
-
-def T_revolute(xyz, rpy, axis, qi):
-    T = cs.SX.zeros(4, 4)
-
-    # Origin rotation from RPY ZYX convention
-    cr = cs.cos(rpy[0])
-    sr = cs.sin(rpy[0])
-    cp = cs.cos(rpy[1])
-    sp = cs.sin(rpy[1])
-    cy = cs.cos(rpy[2])
-    sy = cs.sin(rpy[2])
-    r00 = cy*cp
-    r01 = cy*sp*sr - sy*cr
-    r02 = cy*sp*cr + sy*sr
-    r10 = sy*cp
-    r11 = sy*sp*sr + cy*cr
-    r12 = sy*sp*cr - cy*sr
-    r20 = -sp
-    r21 = cp*sr
-    r22 = cp*cr
-
-    # joint rotation from skew sym axis angle
-    cqi = cs.cos(qi)
-    sqi = cs.sin(qi)
-    s00 = (1 - cqi)*axis[0]*axis[0] + cqi
-    s11 = (1 - cqi)*axis[1]*axis[1] + cqi
-    s22 = (1 - cqi)*axis[2]*axis[2] + cqi
-    s01 = (1 - cqi)*axis[0]*axis[1] - axis[2]*sqi
-    s10 = (1 - cqi)*axis[0]*axis[1] + axis[2]*sqi
-    s12 = (1 - cqi)*axis[1]*axis[2] - axis[0]*sqi
-    s21 = (1 - cqi)*axis[1]*axis[2] + axis[0]*sqi
-    s20 = (1 - cqi)*axis[0]*axis[2] - axis[1]*sqi
-    s02 = (1 - cqi)*axis[0]*axis[2] + axis[1]*sqi
-
-    # Homogeneous transformation matrix
-    T[0, 0] = r00*s00 + r01*s10 + r02*s20
-    T[1, 0] = r10*s00 + r11*s10 + r12*s20
-    T[2, 0] = r20*s00 + r21*s10 + r22*s20
-
-    T[0, 1] = r00*s01 + r01*s11 + r02*s21
-    T[1, 1] = r10*s01 + r11*s11 + r12*s21
-    T[2, 1] = r20*s01 + r21*s11 + r22*s21
-
-    T[0, 2] = r00*s02 + r01*s12 + r02*s22
-    T[1, 2] = r10*s02 + r11*s12 + r12*s22
-    T[2, 2] = r20*s02 + r21*s12 + r22*s22
-
-    T[0, 3] = xyz[0]
-    T[1, 3] = xyz[1]
-    T[2, 3] = xyz[2]
-    T[3, 3] = 1.0
-    return T
-
-
-def quaternion_revolute(xyz, rpy, axis, qi):
-    """Gives a casadi function for the quaternion. [xyz, w] form."""
-    roll, pitch, yaw = rpy
-    # Origin rotation from RPY ZYX convention
-    cr = cs.cos(roll/2.0)
-    sr = cs.sin(roll/2.0)
-    cp = cs.cos(pitch/2.0)
-    sp = cs.sin(pitch/2.0)
-    cy = cs.cos(yaw/2.0)
-    sy = cs.sin(yaw/2.0)
-
-    # The quaternion associated with the origin rotation
-    # Note: quat = [ xyz, w], where w is the scalar part
-    x_or = cy*sr*cp - sy*cr*sp
-    y_or = cy*cr*sp + sy*sr*cp
-    z_or = sy*cr*cp - cy*sr*sp
-    w_or = cy*cr*cp + sy*sr*sp
-    q_or = [x_or, y_or, z_or, w_or]
-    # Joint rotation from axis angle
-    cqi = cs.cos(qi/2.0)
-    sqi = cs.sin(qi/2.0)
-    x_j = axis[0]*sqi
-    y_j = axis[1]*sqi
-    z_j = axis[2]*sqi
-    w_j = cqi
-    q_j = [x_j, y_j, z_j, w_j]
-    # Resulting quaternion
-    return quaternion_product(q_or, q_j)
-
-
-def T_full_symbolic(xyz, rpy):
-    """Gives a symbolic transformation matrix."""
-    T = cs.SX.zeros(4, 4)
-    cr = cs.cos(rpy[0])
-    sr = cs.sin(rpy[0])
-    cp = cs.cos(rpy[1])
-    sp = cs.sin(rpy[1])
-    cy = cs.cos(rpy[2])
-    sy = cs.sin(rpy[2])
-    T[0, 0] = cy*cp
-    T[0, 1] = cy*sp*sr - sy*cr
-    T[0, 2] = cy*sp*cr + sy*sr
-    T[1, 0] = sy*cp
-    T[1, 1] = sy*sp*sr + cy*cr
-    T[1, 2] = sy*sp*cr - cy*sr
-    T[2, 0] = -sp
-    T[2, 1] = cp*sr
-    T[2, 2] = cp*cr
-    T[0, 3] = xyz[0]
-    T[1, 3] = xyz[1]
-    T[2, 3] = xyz[2]
-    T[3, 3] = 1.0
-    return T
-
-
-def T_denavit_hartenberg(joint_angle, link_length, link_offset, link_twist):
-    """Returns a transformation matrix based on denavit hartenberg
-    parameters."""
-    T = cs.SX.zeros(4, 4)
-    T[0, 0] = cs.cos(joint_angle)
-    T[0, 1] = -cs.sin(joint_angle)*cs.cos(link_twist)
-    T[0, 2] = cs.sin(joint_angle)*cs.sin(link_twist)
-    T[0, 3] = link_length*cs.cos(joint_angle)
-    T[1, 0] = cs.sin(joint_angle)
-    T[1, 1] = cs.cos(joint_angle)*cs.cos(link_twist)
-    T[1, 2] = -cs.cos(joint_angle)*cs.sin(link_twist)
-    T[1, 3] = link_length*cs.sin(joint_angle)
-    T[2, 1] = cs.sin(link_twist)
-    T[2, 2] = cs.cos(link_twist)
-    T[2, 3] = link_offset
-    T[3, 3] = 1.0
-    return T
-
-
-def quaternion_product(quat0, quat1):
-    """Returns the quaternion product of q0 and q1."""
-    quat = cs.SX.zeros(4)
-    x0, y0, z0, w0 = quat0[0], quat0[1], quat0[2], quat0[3]
-    x1, y1, z1, w1 = quat1[0], quat1[1], quat1[2], quat1[3]
-    quat[0] = w0*x1 + x0*w1 + y0*z1 - z0*y1
-    quat[1] = w0*y1 - x0*z1 + y0*w1 + z0*x1
-    quat[2] = w0*z1 + x0*y1 - y0*x1 + z0*w1
-    quat[3] = w0*w1 - x0*x1 - y0*y1 - z0*z1
-    return quat
-
-
-def quaternion_conj(quat):
-    res = cs.SX.zeros(4)
-    res[0] = -quat[0]
-    res[1] = -quat[1]
-    res[2] = -quat[2]
-    res[3] = quat[3]
-    return res
-
-
-def dual_quaternion_product(Q, P):
-=======
 def product(Q, P):
->>>>>>> 10c69944730516bc76702faf0c44151dac47ddfe:urdf2casadi/geometry/dual_quaternion.py
     """Returns the dual quaternion product of two 8 element vectors
     representing a dual quaternions. First four elements are the real
     part, last four elements are the dual part.
@@ -266,11 +74,7 @@ def inv(Q):
     https://github.com/bobbens/libdq/blob/master/dq.c
     """
     res = cs.SX.zeros(8)
-<<<<<<< HEAD:urdf2casadi/casadi_geom.py
-    real, dual = dual_quaternion_norm2(Q)
-=======
     real, dual = norm2(Q)
->>>>>>> 10c69944730516bc76702faf0c44151dac47ddfe:urdf2casadi/geometry/dual_quaternion.py
     res[0] = -Q[0] * real
     res[1] = -Q[1] * real
     res[2] = -Q[2] * real
@@ -481,29 +285,6 @@ def revolute(xyz, rpy, axis, qi):
     z_jt = 0.0
     w_jt = 0.0
     Q_j = [x_jr, y_jr, z_jr, w_jr, x_jt, y_jt, z_jt, w_jt]
-<<<<<<< HEAD:urdf2casadi/casadi_geom.py
-    return dual_quaternion_product(Q_o, Q_j)
-
-
-def dual_quaternion_to_pos(Q):
-    """Returns the Cartesian position in a dual quaternion."""
-    quaternion_rot_conj = quaternion_conj(Q[:4])
-    quaternion_disp = Q[4:8]
-    return 2*quaternion_product(quaternion_disp, quaternion_rot_conj)[:3]
-
-
-def dual_quaternion_denavit_hartenberg(joint_angle, link_length,
-                                       link_offset, link_twist):
-    """Returns a transformation matrix based on denavit hartenberg
-    parameters."""
-    Q_rot_z = dual_quaternion_axis_rotation([0., 0., 1.], joint_angle)
-    Q_trans_z = dual_quaternion_axis_translation([0., 0., 1.], link_offset)
-    Q_trans_x = dual_quaternion_axis_translation([1., 0., 0.], link_length)
-    Q_rot_x = dual_quaternion_axis_rotation([1., 0., 0.], link_twist)
-    Q_z = dual_quaternion_product(Q_rot_z, Q_trans_z)
-    Q_x = dual_quaternion_product(Q_trans_x, Q_rot_x)
-    return dual_quaternion_product(Q_z, Q_x)
-=======
     return product(Q_o, Q_j)
 
 
@@ -756,4 +537,3 @@ def numpy_revolute(xyz, rpy, axis, qi):
     w_jt = 0.0
     Q_j = [x_jr, y_jr, z_jr, w_jr, x_jt, y_jt, z_jt, w_jt]
     return product(Q_o, Q_j)
->>>>>>> 10c69944730516bc76702faf0c44151dac47ddfe:urdf2casadi/geometry/dual_quaternion.py
