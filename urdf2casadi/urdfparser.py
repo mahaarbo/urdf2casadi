@@ -75,7 +75,7 @@ class URDFparser(object):
         for item in chain:
             if item in self.robot_desc.joint_map:
                 joint = self.robot_desc.joint_map[item]
-                if (joint.type in self.actuated_types):
+                if joint.type in self.actuated_types:
                     n_actuated += 1
 
         return n_actuated
@@ -223,9 +223,16 @@ class URDFparser(object):
                     a.append(cs.mtimes(Si[i], q_ddot[i]))
             else:
                 v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
-                a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(Si[i], q_ddot[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), vJ))
+                a.append(
+                    cs.mtimes(i_X_p[i], a[i-1])
+                    + cs.mtimes(Si[i], q_ddot[i])
+                    + cs.mtimes(plucker.motion_cross_product(v[i]), vJ))
 
-            f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))
+            f.append(
+                cs.mtimes(Ic[i], a[i])
+                + cs.mtimes(
+                    plucker.force_cross_product(v[i]),
+                    cs.mtimes(Ic[i], v[i])))
 
         if f_ext is not None:
             f = self._apply_external_forces(f_ext, f, i_X_p)
