@@ -287,7 +287,9 @@ class URDFparser(object):
 
         for i in range(n_joints-1, -1, -1):
             if i != 0:
-                Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
+                Ic_composite[i-1] = (Ic[i-1]
+                  + cs.mtimes(i_X_p[i].T,
+                              cs.mtimes(Ic_composite[i], i_X_p[i])))
 
         for i in range(0, n_joints):
             fh = cs.mtimes(Ic_composite[i], Si[i])
