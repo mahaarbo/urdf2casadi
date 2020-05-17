@@ -239,7 +239,7 @@ class URDFparser(object):
 
         for i in range(n_joints-1, -1, -1):
             tau[i] = cs.mtimes(Si[i].T, f[i])
-            if i == 0:
+            if i != 0:
                 f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
 
         tau = cs.Function("C", [q, q_dot, q_ddot], [tau], self.func_opts)
