@@ -5,7 +5,7 @@ from urdf_parser_py.urdf import URDF, Pose
 import os
 import urdf2casadi.urdfparser as u2c
 
-path_to_urdf = "/home/lmjohann/urdf2casadi/examples/urdf/snake_robot.urdf"
+path_to_urdf = "../../urdf/snake_robot.urdf"
 root = "base_link"
 tip = "link16"
 

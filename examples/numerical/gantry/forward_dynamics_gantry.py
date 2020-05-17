@@ -5,7 +5,7 @@ from urdf_parser_py.urdf import URDF, Pose
 import os
 import urdf2casadi.urdfparser as u2c
 
-path_to_urdf = "/home/lmjohann/urdf2casadi/examples/urdf/gantry.urdf"
+path_to_urdf = "../../urdf/gantry.urdf"
 root = "gantry_link_base"
 tip = "gantry_tool0"
 

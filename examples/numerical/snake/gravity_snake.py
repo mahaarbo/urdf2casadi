@@ -12,7 +12,7 @@ import pybullet as pb
 
 root = 'base_link'
 tip = 'link16'
-path_to_urdf = '/home/lmjohann/urdf2casadi/examples/urdf/snake_robot.urdf'
+path_to_urdf = '../../urdf/snake_robot.urdf'
 
 #get robot models
 
