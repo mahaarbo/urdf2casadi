@@ -97,15 +97,18 @@ class URDFparser(object):
         i = 0
 
         for item in chain:
-
             if item in self.robot_desc.joint_map:
                 joint = self.robot_desc.joint_map[item]
 
                 if joint.type == "fixed":
                     if prev_joint == "fixed":
-                        XT_prev = cs.mtimes(plucker.XT(joint.origin.xyz, joint.origin.rpy), XT_prev)
+                        XT_prev = cs.mtimes(
+                            plucker.XT(joint.origin.xyz, joint.origin.rpy),
+                            XT_prev)
                     else:
-                        XT_prev = plucker.XT(joint.origin.xyz, joint.origin.rpy)
+                        XT_prev = plucker.XT(
+                            joint.origin.xyz,
+                            joint.origin.rpy)
                     inertia_transform = XT_prev
                     prev_inertia = spatial_inertia
 
@@ -113,10 +116,16 @@ class URDFparser(object):
                     if n_actuated != 0:
                         spatial_inertias.append(spatial_inertia)
                     n_actuated += 1
-                    XJT = plucker.XJT_prismatic(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
-                    if (prev_joint == "fixed"):
+                    XJT = plucker.XJT_prismatic(
+                        joint.origin.xyz,
+                        joint.origin.rpy,
+                        joint.axis, q[i])
+                    if prev_joint == "fixed":
                         XJT = cs.mtimes(XJT, XT_prev)
-                    Si = cs.SX([0, 0, 0, joint.axis[0], joint.axis[1], joint.axis[2]])
+                    Si = cs.SX([0, 0, 0,
+                                joint.axis[0],
+                                joint.axis[1],
+                                joint.axis[2]])
                     i_X_p.append(XJT)
                     Sis.append(Si)
                     i += 1
@@ -126,10 +135,20 @@ class URDFparser(object):
                         spatial_inertias.append(spatial_inertia)
                     n_actuated += 1
 
-                    XJT = plucker.XJT_revolute(joint.origin.xyz, joint.origin.rpy, joint.axis, q[i])
+                    XJT = plucker.XJT_revolute(
+                        joint.origin.xyz,
+                        joint.origin.rpy,
+                        joint.axis,
+                        q[i])
                     if prev_joint == "fixed":
                         XJT = cs.mtimes(XJT, XT_prev)
-                    Si = cs.SX([joint.axis[0], joint.axis[1], joint.axis[2], 0, 0, 0])
+                    Si = cs.SX([
+                                joint.axis[0],
+                                joint.axis[1],
+                                joint.axis[2],
+                                0,
+                                0,
+                                0])
                     i_X_p.append(XJT)
                     Sis.append(Si)
                     i += 1
@@ -143,10 +162,20 @@ class URDFparser(object):
                     spatial_inertia = np.zeros((6, 6))
                 else:
                     I = link.inertial.inertia
-                    spatial_inertia = plucker.spatial_inertia_matrix_IO(I.ixx, I.ixy, I.ixz, I.iyy, I.iyz, I.izz, link.inertial.mass, link.inertial.origin.xyz)
+                    spatial_inertia = plucker.spatial_inertia_matrix_IO(
+                        I.ixx,
+                        I.ixy,
+                        I.ixz,
+                        I.iyy,
+                        I.iyz,
+                        I.izz,
+                        link.inertial.mass,
+                        link.inertial.origin.xyz)
 
                 if prev_joint == "fixed":
-                    spatial_inertia = prev_inertia + cs.mtimes(inertia_transform.T, cs.mtimes(spatial_inertia, inertia_transform))
+                    spatial_inertia = prev_inertia + cs.mtimes(
+                        inertia_transform.T,
+                        cs.mtimes(spatial_inertia, inertia_transform))
 
                 if link.name == tip:
                     spatial_inertias.append(spatial_inertia)
@@ -182,10 +211,16 @@ class URDFparser(object):
             if i == 0:
                 v.append(vJ)
                 if gravity is not None:
-                    ag = np.array([0., 0., 0., gravity[0], gravity[1], gravity[2]])
-                    a.append(cs.mtimes(i_X_p[i], -ag) + cs.mtimes(Si[i], q_ddot[i]))
+                    ag = np.array([0.,
+                                   0.,
+                                   0.,
+                                   gravity[0],
+                                   gravity[1],
+                                   gravity[2]])
+                    a.append(
+                        cs.mtimes(i_X_p[i], -ag) + cs.mtimes(Si[i], q_ddot[i]))
                 else:
-                    a.append(cs.mtimes(Si[i],q_ddot[i]))
+                    a.append(cs.mtimes(Si[i], q_ddot[i]))
             else:
                 v.append(cs.mtimes(i_X_p[i], v[i-1]) + vJ)
                 a.append(cs.mtimes(i_X_p[i], a[i-1]) + cs.mtimes(Si[i], q_ddot[i]) + cs.mtimes(plucker.motion_cross_product(v[i]), vJ))
@@ -243,21 +278,21 @@ class URDFparser(object):
         for i in range(0, n_joints):
             Ic_composite[i] = Ic[i]
 
-            for i in range(n_joints-1, -1, -1):
-                if i != 0:
-                    Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
+        for i in range(n_joints-1, -1, -1):
+            if i != 0:
+                Ic_composite[i-1] = Ic[i-1] + cs.mtimes(i_X_p[i].T, cs.mtimes(Ic_composite[i], i_X_p[i]))
 
-            for i in range(0, n_joints):
-                fh = cs.mtimes(Ic_composite[i], Si[i])
-                M[i, i] = cs.mtimes(Si[i].T, fh)
-                j = i
-                while j != 0:
-                    fh = cs.mtimes(i_X_p[j].T, fh)
-                    j -= 1
-                    M[i, j] = cs.mtimes(Si[j].T, fh)
-                    M[j, i] = M[i, j]
+        for i in range(0, n_joints):
+            fh = cs.mtimes(Ic_composite[i], Si[i])
+            M[i, i] = cs.mtimes(Si[i].T, fh)
+            j = i
+            while j != 0:
+                fh = cs.mtimes(i_X_p[j].T, fh)
+                j -= 1
+                M[i, j] = cs.mtimes(Si[j].T, fh)
+                M[j, i] = M[i, j]
 
-            return M
+        return M
 
     def get_inertia_matrix_crba(self, root, tip):
         """Returns the inertia matrix as a casadi function."""
