@@ -5,12 +5,12 @@ from urdf_parser_py.urdf import URDF, Pose
 import os
 import urdf2casadi.urdfparser as u2c
 
-kuka_model = rbdl.loadModel("/home/lmjohann/urdf2casadi/examples/urdf/kuka.urdf")
+kuka_model = rbdl.loadModel("../../urdf/kuka.urdf")
 
 root = "calib_kuka_arm_base_link"
 tip = "kuka_arm_7_link"
 kuka = u2c.URDFparser()
-kuka.from_file("/home/lmjohann/urdf2casadi/examples/urdf/kuka.urdf")
+kuka.from_file("../../urdf/kuka.urdf")
 
 jointlist, names, q_max, q_min = kuka.get_joint_info(root, tip)
 n_joints = kuka.get_n_joints(root, tip)

@@ -5,7 +5,7 @@ from urdf_parser_py.urdf import URDF, Pose
 import os
 import urdf2casadi.urdfparser as u2c
 
-path_to_urdf = "/home/lmjohann/urdf2casadi/examples/urdf/ur5_mod.urdf"
+path_to_urdf = "../../urdf/ur5_mod.urdf"
 root = "base_link"
 tip = "tool0"
 
@@ -36,7 +36,7 @@ error_u2c_crba_aba = np.zeros(n_joints)
 error_u2c_crba_rbdl_aba = np.zeros(n_joints)
 
 def u2c2np(asd):
-    return cs.Function("temp",[],[asd])()["o0"].toarray()
+    return cs.Function("temp", [], [asd])()["o0"].toarray()
 
 n_itr = 1000
 for i in range(n_itr):
@@ -53,9 +53,9 @@ for i in range(n_itr):
 
     for qddot_idx in range(n_joints):
         error_rbdl_u2c_aba[qddot_idx] += np.absolute(u2c2np(fd_u2c_aba[qddot_idx]) - fd_rbdl_aba[qddot_idx])
-        #error_rbdl_u2c_crba[qddot_idx] += np.absolute(u2c2np(fd_u2c_crba[qddot_idx]) - fd_rbdl_crba[qddot_idx])
+        error_rbdl_u2c_crba[qddot_idx] += np.absolute(u2c2np(fd_u2c_crba[qddot_idx]) - fd_rbdl_crba[qddot_idx])
         error_u2c_crba_aba[qddot_idx] += np.absolute(u2c2np(fd_u2c_aba[qddot_idx]) - u2c2np(fd_u2c_crba[qddot_idx]))
-        #error_rbdl_crba_aba[qddot_idx] += np.absolute(fd_rbdl_crba[qddot_idx] - fd_rbdl_aba[qddot_idx])
+        error_rbdl_crba_aba[qddot_idx] += np.absolute(fd_rbdl_crba[qddot_idx] - fd_rbdl_aba[qddot_idx])
         error_u2c_crba_rbdl_aba[qddot_idx] += np.absolute(u2c2np(fd_u2c_crba[qddot_idx]) - fd_rbdl_aba[qddot_idx])
 
 

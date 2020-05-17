@@ -12,10 +12,10 @@ import pybullet as pb
 
 root = 'base_link'
 tip = 'tool0'
-path_to_urdf = '/home/lmjohann/urdf2casadi/examples/urdf/ur5_mod.urdf'
+path_to_urdf = '../../urdf/ur5_mod.urdf'
 #kdl
 ok, ur5_tree = kdlurdf.treeFromFile(path_to_urdf)
-ur5_chain = ur5_tree.getChain(root,tip)
+ur5_chain = ur5_tree.getChain(root, tip)
 
 #rbdl
 ur5_rbdl = rbdl.loadModel(path_to_urdf)
@@ -26,7 +26,9 @@ ur5.from_file(path_to_urdf)
 
 #pybullet
 sim = pb.connect(pb.DIRECT)
-ur5_pb = pb.loadURDF(path_to_urdf, useFixedBase=True, flags = pb.URDF_USE_INERTIA_FROM_FILE)
+ur5_pb = pb.loadURDF(path_to_urdf,
+                     useFixedBase=True,
+                     flags=pb.URDF_USE_INERTIA_FROM_FILE or pb.URDF_MERGE_FIXED_LINKS)
 pb.setGravity(0, 0, -9.81)
 
 #joint info

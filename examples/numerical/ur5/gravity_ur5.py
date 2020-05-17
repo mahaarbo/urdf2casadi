@@ -14,7 +14,7 @@ import pybullet as pb
 
 root = 'base_link'
 tip = 'tool0'
-path_to_urdf = '/home/lmjohann/urdf2casadi/examples/urdf/ur5_mod.urdf'
+path_to_urdf = '../../urdf/ur5_mod.urdf'
 
 #get robot models
 

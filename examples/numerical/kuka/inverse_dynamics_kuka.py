@@ -9,9 +9,9 @@ import urdf2casadi.urdfparser as u2c
 root = "calib_kuka_arm_base_link"
 tip = "kuka_arm_7_link"
 
-urmodel = rbdl.loadModel("/home/lmjohann/urdf2casadi/examples/urdf/kuka.urdf")
+urmodel = rbdl.loadModel("../../urdf/kuka.urdf")
 kuka = u2c.URDFparser()
-kuka.from_file("/home/lmjohann/urdf2casadi/examples/urdf/kuka.urdf")
+kuka.from_file("../../urdf/kuka.urdf")
 
 jointlist, names, q_max, q_min = kuka.get_joint_info(root, tip)
 n_joints = kuka.get_n_joints(root, tip)
@@ -29,7 +29,7 @@ id_sym = kuka.get_inverse_dynamics_rnea(root, tip, gravity)
 error = np.zeros(n_joints)
 
 def u2c2np(asd):
-    return cs.Function("temp",[],[asd])()["o0"].toarray()
+    return cs.Function("temp", [], [asd])()["o0"].toarray()
 
 n_itr = 1000
 for i in range(n_itr):
@@ -41,7 +41,6 @@ for i in range(n_itr):
         q_rbdl[j] = q[j]
         qdot_rbdl[j] = qdot[j]
         #qddot_rbdl[j] = qddot[j]
-
 
     rbdl.InverseDynamics(urmodel, q_rbdl, qdot_rbdl, qddot_rbdl, id_rbdl)
     id_u2c = id_sym(q, qdot, qddot_rbdl)

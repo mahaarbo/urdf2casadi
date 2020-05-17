@@ -6,7 +6,7 @@ import os
 import urdf2casadi.urdfparser as u2c
 import pybullet as pb
 
-path_to_urdf = "/home/lmjohann/urdf2casadi/examples/urdf/ur5_mod.urdf"
+path_to_urdf = "../../urdf/ur5_mod.urdf"
 root = "base_link"
 tip = "tool0"
 
