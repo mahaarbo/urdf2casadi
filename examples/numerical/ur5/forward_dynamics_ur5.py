@@ -53,27 +53,27 @@ for i in range(n_itr):
 
     for qddot_idx in range(n_joints):
         error_rbdl_u2c_aba[qddot_idx] += np.absolute(u2c2np(fd_u2c_aba[qddot_idx]) - fd_rbdl_aba[qddot_idx])
-        error_rbdl_u2c_crba[qddot_idx] += np.absolute(u2c2np(fd_u2c_crba[qddot_idx]) - fd_rbdl_crba[qddot_idx])
+        #error_rbdl_u2c_crba[qddot_idx] += np.absolute(u2c2np(fd_u2c_crba[qddot_idx]) - fd_rbdl_crba[qddot_idx])
         error_u2c_crba_aba[qddot_idx] += np.absolute(u2c2np(fd_u2c_aba[qddot_idx]) - u2c2np(fd_u2c_crba[qddot_idx]))
-        error_rbdl_crba_aba[qddot_idx] += np.absolute(fd_rbdl_crba[qddot_idx] - fd_rbdl_aba[qddot_idx])
+        #error_rbdl_crba_aba[qddot_idx] += np.absolute(fd_rbdl_crba[qddot_idx] - fd_rbdl_aba[qddot_idx])
         error_u2c_crba_rbdl_aba[qddot_idx] += np.absolute(u2c2np(fd_u2c_crba[qddot_idx]) - fd_rbdl_aba[qddot_idx])
 
 
-sum_error_rbdl_u2c_crba = 0
+#sum_error_rbdl_u2c_crba = 0
 sum_error_rbdl_u2c_aba = 0
-sum_error_rbdl_crba_aba = 0
+#sum_error_rbdl_crba_aba = 0
 sum_error_u2c_crba_aba = 0
 sum_error_u2c_crba_rbdl_aba = 0
 
 for err in range(n_joints):
-    sum_error_rbdl_u2c_crba += error_rbdl_u2c_crba[err]
+    #sum_error_rbdl_u2c_crba += error_rbdl_u2c_crba[err]
     sum_error_rbdl_u2c_aba += error_rbdl_u2c_aba[err]
-    sum_error_rbdl_crba_aba += error_rbdl_crba_aba[err]
+    #sum_error_rbdl_crba_aba += error_rbdl_crba_aba[err]
     sum_error_u2c_crba_aba += error_u2c_crba_aba[err]
     sum_error_u2c_crba_rbdl_aba += error_u2c_crba_rbdl_aba[err]
 
 print "\nSum of errors RBDL vs. U2c using ABA for", n_itr, "iterations:\n", sum_error_rbdl_u2c_aba
-print "\nSum of errors RBDL vs. U2C using CRBA for", n_itr, "iterations:\n", sum_error_rbdl_u2c_crba
+#print "\nSum of errors RBDL vs. U2C using CRBA for", n_itr, "iterations:\n", sum_error_rbdl_u2c_crba
 print "\nSum of errors U2C ABA vs. CRBA for", n_itr, "iterations:\n",sum_error_u2c_crba_aba
-print "\nSum of errors RBDL ABA vs. CRBA for", n_itr, "iterations:\n", sum_error_rbdl_crba_aba
+#print "\nSum of errors RBDL ABA vs. CRBA for", n_itr, "iterations:\n", sum_error_rbdl_crba_aba
 print "\nSum of errors RBDL ABA vs. U2C CRBA for", n_itr, "iterations:\n", sum_error_u2c_crba_rbdl_aba
