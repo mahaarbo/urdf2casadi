@@ -30,6 +30,19 @@ forward_kinematics = fk_dict["T_fk"]
 print forward_kinematics([0.3, 0.3, 0.3, 0., 0.3, 0.7])
 ```
 
+## Citation
+The results were published in "Robot Dynamics with URDF & CasADi" at ICCMA 2019. [[Preprint](http://folk.ntnu.no/tomgra/papers/Johannessen_ICCMA_2019_paper_23%20.pdf)]
+```
+@inproceedings{urdf2casadi,
+  title={Robot Dynamics with URDF \& CasADi},
+  author={Johannessen, Lill Maria Gjerde and Arbo, Mathias Hauan and Gravdahl, Jan Tommy},
+  booktitle={2019 7th International Conference on Control, Mechatronics and Automation (ICCMA)},
+  year={2019},
+  organization={IEEE}
+}
+```
+
+
 ## Todo/Implementation status
 - [x] Forward kinematics with SE(3) matrix
 - [x] Forward kinematics of rotation with quaternion
