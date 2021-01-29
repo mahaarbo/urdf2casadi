@@ -242,8 +242,7 @@ def prismatic(xyz, rpy, axis, qi):
     w_jt = 0.0
     Q_j = [x_jr, y_jr, z_jr, w_jr, x_jt, y_jt, z_jt, w_jt]
     # Get resulting dual quaternion
-    return
-    product(Q_o, Q_j)
+    return product(Q_o, Q_j)
 
 
 def revolute(xyz, rpy, axis, qi):

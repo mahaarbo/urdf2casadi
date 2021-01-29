@@ -4,10 +4,10 @@ casadi function.
 import casadi as cs
 import numpy as np
 from urdf_parser_py.urdf import URDF, Pose
-from geometry import transformation_matrix as T
-from geometry import plucker
-from geometry import quaternion
-from geometry import dual_quaternion
+import urdf2casadi.geometry.transformation_matrix as T
+import urdf2casadi.geometry.plucker as plucker
+import urdf2casadi.geometry.quaternion as quaternion
+import urdf2casadi.geometry.dual_quaternion as dual_quaternion
 
 
 class URDFparser(object):
