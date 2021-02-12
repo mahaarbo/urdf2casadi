@@ -3,6 +3,7 @@ casadi function.
 """
 import casadi as cs
 import numpy as np
+from sys import platform
 from urdf_parser_py.urdf import URDF, Pose
 import urdf2casadi.geometry.transformation_matrix as T
 import urdf2casadi.geometry.plucker as plucker
@@ -14,7 +15,10 @@ class URDFparser(object):
     """Class that turns a chain from URDF to casadi functions."""
     actuated_types = ["prismatic", "revolute", "continuous"]
     func_opts = {"jit": True, "jit_options": {"flags": "-Ofast"}}
-
+    # OS dependent specification of compiler
+    if platform == "darwin":
+        func_opts["compiler"] = "shell"
+    
     def __init__(self):
         self.robot_desc = None
 
@@ -586,12 +590,11 @@ class URDFparser(object):
                     dual_quaternion_fk,
                     joint_dual_quat)
                 i += 1
-        opts = {"jit": True, "jit_options": {"flags": "-Ofast"}}
-        T_fk = cs.Function("T_fk", [q], [T_fk], opts)
+        T_fk = cs.Function("T_fk", [q], [T_fk], self.func_opts)
         quaternion_fk = cs.Function("quaternion_fk",
-                                    [q], [quaternion_fk], opts)
+                                    [q], [quaternion_fk], self.func_opts)
         dual_quaternion_fk = cs.Function("dual_quaternion_fk",
-                                         [q], [dual_quaternion_fk], opts)
+                                         [q], [dual_quaternion_fk], self.func_opts)
 
         return {
             "joint_names": actuated_names,
