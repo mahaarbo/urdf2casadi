@@ -29,7 +29,7 @@ fk_dict = robot_parser.get_forward_kinematics(root_link, end_link)
 print fk_dict.keys()
 # should give ['q', 'upper', 'lower', 'dual_quaternion_fk', 'joint_names', 'T_fk', 'joint_list', 'quaternion_fk']
 forward_kinematics = fk_dict["T_fk"]
-print forward_kinematics([0.3, 0.3, 0.3, 0., 0.3, 0.7])
+print(forward_kinematics([0.3, 0.3, 0.3, 0., 0.3, 0.7]))
 ```
 
 ## Citation
