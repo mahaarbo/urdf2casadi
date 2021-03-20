@@ -95,7 +95,7 @@ class URDFparser(object):
 
         return max_effort, max_velocity
 
-    def get_friction_matrixes(self, root, tip):
+    def get_friction_matrices(self, root, tip):
         """Using an URDF to extract joint frictions and dampings"""
 
         chain = self.robot_desc.get_chain(root, tip)
