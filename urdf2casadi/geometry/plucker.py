@@ -55,9 +55,9 @@ def spatial_inertia_matrix_Ic(ixx, ixy, ixz, iyy, iyz, izz, mass):
     """Returns the 6x6 spatial inertia matrix expressed at the center of
     mass."""
     Ic = np.zeros([6, 6])
-    Ic[:3, :3] = np.array([[ixx, -ixy, -ixz],
-                           [-ixy, iyy, -iyz],
-                           [-ixz, -iyz, izz]])
+    Ic[:3, :3] = np.array([[ixx, ixy, ixz],
+                           [ixy, iyy, iyz],
+                           [ixz, iyz, izz]])
 
     Ic[3, 3] = mass
     Ic[4, 4] = mass
@@ -70,9 +70,9 @@ def spatial_inertia_matrix_IO(ixx, ixy, ixz, iyy, iyz, izz, mass, c):
     """Returns the 6x6 spatial inertia matrix expressed at the origin."""
     IO = np.zeros([6, 6])
     cx = numpy_skew_symmetric(c)
-    inertia_matrix = np.array([[ixx, -ixy, -ixz],
-                               [-ixy, iyy, -iyz],
-                               [-ixz, -iyz, izz]])
+    inertia_matrix = np.array([[ixx, ixy, ixz],
+                               [ixy, iyy, iyz],
+                               [ixz, iyz, izz]])
 
     IO[:3, :3] = inertia_matrix + mass*(np.dot(cx, np.transpose(cx)))
     IO[:3, 3:] = mass*cx
