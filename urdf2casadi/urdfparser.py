@@ -111,7 +111,7 @@ class URDFparser(object):
                 if joint.type in self.actuated_types:
                     friction += [joint.dynamics.friction]
                     damping += [joint.dynamics.damping]
-        friction = [0 if x==None else x for x in friction]
+        friction = [0 if x is None else x for x in friction]
         damping = [0 if x is None else x for x in damping]
         Fv = np.diag(friction)
         Fd = np.diag(damping)
