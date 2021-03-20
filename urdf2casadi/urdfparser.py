@@ -70,6 +70,54 @@ class URDFparser(object):
 
         return joint_list, actuated_names, upper, lower
 
+    def get_dynamics_limits(self, root, tip):
+        """Using an URDF to extract joint max effort and velocity"""
+
+        chain = self.robot_desc.get_chain(root, tip)
+        if self.robot_desc is None:
+            raise ValueError('Robot description not loaded from urdf')
+
+        max_effort = []
+        max_velocity = []
+
+        for item in chain:
+            if item in self.robot_desc.joint_map:
+                joint = self.robot_desc.joint_map[item]
+                if joint.type in self.actuated_types:
+                    if joint.limit is None:
+                        max_effort += [cs.inf]
+                        max_velocity += [cs.inf]
+                    else:
+                        max_effort += [joint.limit.effort]
+                        max_velocity += [joint.limit.velocity]
+        max_effort = [cs.inf if x is None else x for x in max_effort]
+        max_velocity = [cs.inf if x is None else x for x in max_velocity]
+
+        return max_effort, max_velocity
+
+    def get_friction_matrices(self, root, tip):
+        """Using an URDF to extract joint frictions and dampings"""
+
+        chain = self.robot_desc.get_chain(root, tip)
+        if self.robot_desc is None:
+            raise ValueError('Robot description not loaded from urdf')
+
+        friction = []
+        damping = []
+
+        for item in chain:
+            if item in self.robot_desc.joint_map:
+                joint = self.robot_desc.joint_map[item]
+                if joint.type in self.actuated_types:
+                    friction += [joint.dynamics.friction]
+                    damping += [joint.dynamics.damping]
+        friction = [0 if x is None else x for x in friction]
+        damping = [0 if x is None else x for x in damping]
+        Fv = np.diag(friction)
+        Fd = np.diag(damping)
+        return Fv, Fd
+
+
     def get_n_joints(self, root, tip):
         """Returns number of actuated joints."""
 
