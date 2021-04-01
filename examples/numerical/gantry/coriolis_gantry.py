@@ -10,9 +10,9 @@ import kdl_parser_py.urdf as kdlurdf
 import pybullet as pb
 
 
-path_to_urdf = "../../urdf/gantry.urdf"
-root = "gantry_link_base"
-tip = "gantry_tool0"
+path_to_urdf = "../../urdf/panda.urdf"
+root = "panda_link0"
+tip = "panda_link8"
 
 #get robot models
 
@@ -22,6 +22,7 @@ gantry_kdl = ur_tree.getChain(root,tip)
 
 #rbdl
 gantry_rbdl = rbdl.loadModel(path_to_urdf)
+print(gantry_rbdl)
 
 #u2c
 gantry = u2c.URDFparser()
@@ -130,9 +131,10 @@ for err in range(n_joints):
     sum_error_pb_kdl += error_pb_kdl[err]
     sum_error_pb_rbdl += error_pb_rbdl[err]
 
-print "\nSum of errors KDL vs. RBDL for", n_itr, "iterations:\n", sum_error_kdl_rbdl
-print "\nSum of errors KDL vs. U2C for", n_itr, "iterations:\n", sum_error_kdl_u2c
-print "\nSum of errors RBDL vs. U2C for", n_itr, "iterations:\n",sum_error_rbdl_u2c
-print "\nSum of errors pybullet vs. U2C for", n_itr, "iterations:\n", sum_error_pb_u2c
-print "\nSum of errors pybullet vs. KDL for", n_itr, "iterations:\n",sum_error_pb_kdl
-print "\nSum of errors pybullet vs. RBDL for", n_itr, "iterations:\n", sum_error_pb_rbdl
+print("Sum of errors KDL vs. RBDL for", n_itr, "iterations:\n", sum_error_kdl_rbdl)
+print("\nSum of errors KDL vs. RBDL for", n_itr, "iterations:\n", sum_error_kdl_rbdl)
+print("\nSum of errors KDL vs. U2C for", n_itr, "iterations:\n", sum_error_kdl_u2c)
+print("\nSum of errors RBDL vs. U2C for", n_itr, "iterations:\n",sum_error_rbdl_u2c)
+print("\nSum of errors pybullet vs. U2C for", n_itr, "iterations:\n", sum_error_pb_u2c)
+print("\nSum of errors pybullet vs. KDL for", n_itr, "iterations:\n",sum_error_pb_kdl)
+print("\nSum of errors pybullet vs. RBDL for", n_itr, "iterations:\n", sum_error_pb_rbdl)
