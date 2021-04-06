@@ -10,9 +10,9 @@ import kdl_parser_py.urdf as kdlurdf
 import pybullet as pb
 
 
-path_to_urdf = "../../urdf/gantry.urdf"
-root = "gantry_link_base"
-tip = "gantry_tool0"
+path_to_urdf = "../../urdf/panda.urdf"
+root = "panda_link0"
+tip = "panda_link8"
 
 #get robot models
 
