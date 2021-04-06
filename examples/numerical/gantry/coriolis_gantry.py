@@ -22,7 +22,6 @@ gantry_kdl = ur_tree.getChain(root,tip)
 
 #rbdl
 gantry_rbdl = rbdl.loadModel(path_to_urdf)
-print(gantry_rbdl)
 
 #u2c
 gantry = u2c.URDFparser()
