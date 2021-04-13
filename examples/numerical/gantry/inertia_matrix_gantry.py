@@ -117,9 +117,9 @@ for row in range(n_joints):
         sum_error_pb_kdl += error_pb_kdl[row][col]
         sum_error_pb_rbdl += error_pb_rbdl[row][col]
 
-print "\nSum of errors KDL vs. RBDL for", n_itr, "iterations:\n", sum_error_kdl_rbdl
-print "\nSum of errors KDL vs. U2C for", n_itr, "iterations:\n", sum_error_kdl_u2c
-print "\nSum of errors RBDL vs. U2C for", n_itr, "iterations:\n",sum_error_rbdl_u2c
-print "\nSum of errors pybullet vs. U2C for", n_itr, "iterations:\n", sum_error_pb_u2c
-print "\nSum of errors pybullet vs. KDL for", n_itr, "iterations:\n", sum_error_pb_kdl
-print "\nSum of errors pybullet vs. RBDL for", n_itr, "iterations:\n", sum_error_pb_rbdl
+print( "\nSum of errors KDL vs. RBDL for", n_itr, "iterations:\n", sum_error_kdl_rbdl)
+print("\nSum of errors KDL vs. U2C for", n_itr, "iterations:\n", sum_error_kdl_u2c)
+print("\nSum of errors RBDL vs. U2C for", n_itr, "iterations:\n",sum_error_rbdl_u2c)
+print("\nSum of errors pybullet vs. U2C for", n_itr, "iterations:\n", sum_error_pb_u2c)
+print("\nSum of errors pybullet vs. KDL for", n_itr, "iterations:\n", sum_error_pb_kdl)
+print("\nSum of errors pybullet vs. RBDL for", n_itr, "iterations:\n", sum_error_pb_rbdl)
