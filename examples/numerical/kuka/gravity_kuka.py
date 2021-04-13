@@ -53,9 +53,9 @@ for i in range(n_itr):
     for tau_idx in range(n_joints):
         error[tau_idx] += np.absolute((kdl2np(G_kdl)[tau_idx] - u2c2np(G_u2c)[tau_idx]))
 
-print "Errors in gravity forces with",n_itr, "iterations and comparing against KDL:\n", error
+print("Errors in gravity forces with",n_itr, "iterations and comparing against KDL:\n", error)
 
 sum_error = 0
 for err in range(n_joints):
     sum_error += error[err]
-print "Sum of errors:\n", sum_error
+print("Sum of errors:\n", sum_error)

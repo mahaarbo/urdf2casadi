@@ -40,9 +40,9 @@ for i in range(n_itr):
     for qddot_idx in range(n_joints):
         error[qddot_idx] += np.absolute(u2c2np(qddot_u2c_aba[qddot_idx]) - u2c2np(qddot_u2c_crba)[qddot_idx])
 
-print "Errors in forward dynamics aba joint accelerations with", n_itr, "iterations and comparing against u2c crba:\n", error
+print("Errors in forward dynamics aba joint accelerations with", n_itr, "iterations and comparing against u2c crba:\n", error)
 
 sum_error = 0
 for err in range(n_joints):
     sum_error += error[err]
-print "Sum of errors:\n", sum_error
+print("Sum of errors:\n", sum_error)

@@ -73,8 +73,8 @@ for err in range(n_joints):
     sum_error_u2c_crba_aba += error_u2c_crba_aba[err]
     sum_error_u2c_crba_rbdl_aba += error_u2c_crba_rbdl_aba[err]
 
-print "\nSum of errors RBDL vs. U2c using ABA for", n_itr, "iterations:\n", sum_error_rbdl_u2c_aba
-print "\nSum of errors RBDL vs. U2C using CRBA for", n_itr, "iterations:\n", sum_error_rbdl_u2c_crba
-print "\nSum of errors U2C ABA vs. CRBA for", n_itr, "iterations:\n",sum_error_u2c_crba_aba
-print "\nSum of errors RBDL ABA vs. CRBA for", n_itr, "iterations:\n", sum_error_rbdl_crba_aba
-print "\nSum of errors RBDL ABA vs. U2C CRBA for", n_itr, "iterations:\n", sum_error_u2c_crba_rbdl_aba
+print("\nSum of errors RBDL vs. U2c using ABA for", n_itr, "iterations:\n", sum_error_rbdl_u2c_aba)
+print("\nSum of errors RBDL vs. U2C using CRBA for", n_itr, "iterations:\n", sum_error_rbdl_u2c_crba)
+print("\nSum of errors U2C ABA vs. CRBA for", n_itr, "iterations:\n",sum_error_u2c_crba_aba)
+print("\nSum of errors RBDL ABA vs. CRBA for", n_itr, "iterations:\n", sum_error_rbdl_crba_aba)
+print("\nSum of errors RBDL ABA vs. U2C CRBA for", n_itr, "iterations:\n", sum_error_u2c_crba_rbdl_aba)

@@ -86,6 +86,6 @@ for err in range(n_joints):
     sum_error_rbdl_pb += error_rbdl_pb[err]
     sum_error_pb_u2c += error_pb_u2c[err]
 
-print "\nSum of errors pybullet vs. U2C for", n_itr, "iterations:\n", sum_error_pb_u2c
-print "\nSum of errors RBDL vs. U2C for", n_itr, "iterations:\n",sum_error_rbdl_u2c
-print "\nSum of errors pybullet vs. RBDL for", n_itr, "iterations:\n", sum_error_rbdl_pb
+print("\nSum of errors pybullet vs. U2C for", n_itr, "iterations:\n", sum_error_pb_u2c)
+print("\nSum of errors RBDL vs. U2C for", n_itr, "iterations:\n",sum_error_rbdl_u2c)
+print("\nSum of errors pybullet vs. RBDL for", n_itr, "iterations:\n", sum_error_rbdl_pb)
