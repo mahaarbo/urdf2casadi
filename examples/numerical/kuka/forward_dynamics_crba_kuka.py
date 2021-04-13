@@ -49,9 +49,9 @@ for i in range(n_itr):
     for fd_idx in range(n_joints):
         error[fd_idx] += np.absolute(fd_rbdl[fd_idx] - u2c2np(fd_u2c)[fd_idx])
 
-print "Errors in forward dynamics joint accelerations with",n_itr, "iterations and comparing against rbdl:\n", error
+print("Errors in forward dynamics joint accelerations with",n_itr, "iterations and comparing against rbdl:\n", error)
 
 sum_error = 0
 for err in range(6):
     sum_error += error[err]
-print "Sum of errors:\n", sum_error
+print("Sum of errors:\n", sum_error)

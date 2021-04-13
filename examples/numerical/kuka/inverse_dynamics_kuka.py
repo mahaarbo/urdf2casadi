@@ -48,9 +48,9 @@ for i in range(n_itr):
     for id_idx in range(n_joints):
         error[id_idx] += np.absolute(id_rbdl[id_idx] - u2c2np(id_u2c)[id_idx])
 
-print "Errors in inverse dynamics forces with",n_itr, "iterations and comparing against rbdl:\n", error
+print("Errors in inverse dynamics forces with",n_itr, "iterations and comparing against rbdl:\n", error)
 
 sum_error = 0
 for err in range(n_joints):
     sum_error += error[err]
-print "Sum of errors:\n", sum_error
+print("Sum of errors:\n", sum_error)

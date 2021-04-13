@@ -46,10 +46,10 @@ for i in range(n_itr):
         for col_idx in range(n_joints):
             error[row_idx][col_idx] += np.absolute((kdl2np(M_kdl[row_idx,col_idx])) - u2c2np(M_u2c[row_idx, col_idx]))
 
-print "Errors in inertia matrix with", n_itr, "iterations and comparing against KDL:\n", error
+print("Errors in inertia matrix with", n_itr, "iterations and comparing against KDL:\n", error)
 
 sum_error = 0
 for row in range(n_joints):
     for col in range(n_joints):
         sum_error += error[row][col]
-print "Sum of errors:\n", sum_error
+print("Sum of errors:\n", sum_error)
