@@ -109,8 +109,12 @@ class URDFparser(object):
             if item in self.robot_desc.joint_map:
                 joint = self.robot_desc.joint_map[item]
                 if joint.type in self.actuated_types:
-                    friction += [joint.dynamics.friction]
-                    damping += [joint.dynamics.damping]
+                    if joint.dynamis is None:
+                        friction += [0]
+                        damping += [0]
+                    else:
+                        friction += [joint.dynamics.friction]
+                        damping += [joint.dynamics.damping]
         friction = [0 if x is None else x for x in friction]
         damping = [0 if x is None else x for x in damping]
         Fv = np.diag(friction)
