@@ -19,8 +19,10 @@ class URDFparser(object):
     if system() == "darwin" or machine() == "aarch64":
         func_opts["compiler"] = "shell"
     
-    def __init__(self):
+    def __init__(self, func_opts=None):
         self.robot_desc = None
+        if func_opts:
+            self.func_opts = func_opts
 
     def from_file(self, filename):
         """Uses an URDF file to get robot description."""
