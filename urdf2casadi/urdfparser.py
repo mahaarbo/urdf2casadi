@@ -3,7 +3,7 @@ casadi function.
 """
 import casadi as cs
 import numpy as np
-from sys import platform
+from platform import machine, system
 from urdf_parser_py.urdf import URDF, Pose
 import urdf2casadi.geometry.transformation_matrix as T
 import urdf2casadi.geometry.plucker as plucker
@@ -15,12 +15,14 @@ class URDFparser(object):
     """Class that turns a chain from URDF to casadi functions."""
     actuated_types = ["prismatic", "revolute", "continuous"]
     func_opts = {"jit": True, "jit_options": {"flags": "-Ofast"}}
-    # OS dependent specification of compiler
-    if platform == "darwin":
+    # OS/CPU dependent specification of compiler
+    if system() == "darwin" or machine() == "aarch64":
         func_opts["compiler"] = "shell"
     
-    def __init__(self):
+    def __init__(self, func_opts=None):
         self.robot_desc = None
+        if func_opts:
+            self.func_opts = func_opts
 
     def from_file(self, filename):
         """Uses an URDF file to get robot description."""
