@@ -561,7 +561,7 @@ class URDFparser(object):
                              [q_ddot], self.func_opts)
         return q_ddot
 
-    def get_forward_kinematics(self, root, tip):
+    def get_forward_kinematics(self, root, tip, q):
         """Returns the forward kinematics as a casadi function."""
         chain = self.robot_desc.get_chain(root, tip)
         if self.robot_desc is None:
@@ -569,9 +569,9 @@ class URDFparser(object):
         joint_list, actuated_names, upper, lower = self.get_joint_info(
             root,
             tip)
-        nvar = len(actuated_names)
         T_fk = cs.SX.eye(4)
-        q = cs.SX.sym("q", nvar)
+        # nvar = len(actuated_names)
+        # q = cs.SX.sym("q", nvar)
         quaternion_fk = cs.SX.zeros(4)
         quaternion_fk[3] = 1.0
         dual_quaternion_fk = cs.SX.zeros(8)
@@ -644,7 +644,7 @@ class URDFparser(object):
                     dual_quaternion_fk,
                     joint_dual_quat)
                 i += 1
-        T_fk = cs.Function("T_fk", [q], [T_fk], self.func_opts)
+        #T_fk = cs.Function("T_fk", [q], [T_fk], self.func_opts)
         quaternion_fk = cs.Function("quaternion_fk",
                                     [q], [quaternion_fk], self.func_opts)
         dual_quaternion_fk = cs.Function("dual_quaternion_fk",
