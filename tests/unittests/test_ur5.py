@@ -45,13 +45,13 @@ def test_dynamics(ur5):
     q = [-3.0, 2.5, 0.21, -4.5, -1.0, 2.0]
     q_dot = [0.1, 1.2, -0.6, -1.3, 0.5, 0.6]
 
-    M_num = M_sym(q)
-    C_num = C_sym(q, q_dot)
-    G_num = G_sym(q)
+    M_num = np.array(M_sym(q))
+    C_num = np.array(C_sym(q, q_dot))
+    G_num = np.array(G_sym(q))
 
-    assert M_num.size() == (6, 6)
-    assert G_num.size() == (6, 1)
-    assert C_num.size() == (6, 1)
+    assert M_num.shape == (6, 6)
+    assert G_num.shape == (6, 1)
+    assert C_num.shape == (6, 1)
     M_rbdl = np.array(
         [
             [
@@ -146,7 +146,7 @@ def test_inversDynamics(ur5):
     q_dot = [0.1, 1.2, -0.6, -1.3, 0.5, 0.6]
     q_ddot = np.array([0.5, -0.3, 0.2, 0.1, 0.6, 0.6])
 
-    tau_g_num = tau_g_sym(q, q_dot, q_ddot)
+    tau_g_num = np.array(tau_g_sym(q, q_dot, q_ddot))
 
     tau_rbdl = np.array(
         [
@@ -174,7 +174,7 @@ def test_forwardDynamics(ur5):
     q_dot = [0.1, 1.2, -0.6, -1.3, 0.5, 0.6]
     tau = np.array([0.4, -0.2, 0.1, 1.2, 0.2, -0.3])
 
-    qddot_g_num = qddot_g_sym(q, q_dot, tau)
+    qddot_g_num = np.array(qddot_g_sym(q, q_dot, tau))
     qddot_rbdl = np.array(
         [1.52072684, -17.46341328, 10.95245985, 11.85747633, 0.23032233, -7.33331383]
     )
