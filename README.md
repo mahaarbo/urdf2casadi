@@ -33,7 +33,7 @@ print(forward_kinematics([0.3, 0.3, 0.3, 0., 0.3, 0.7]))
 ```
 
 ## Citation
-The results were published in "Robot Dynamics with URDF & CasADi" at ICCMA 2019. [[Preprint](http://folk.ntnu.no/tomgra/papers/Johannessen_ICCMA_2019_paper_23%20.pdf)]
+The results were published in "Robot Dynamics with URDF & CasADi" at ICCMA 2019. [Preprint](http://folk.ntnu.no/tomgra/papers/Johannessen_ICCMA_2019_paper_23%20.pdf)]
 ```
 @inproceedings{urdf2casadi,
   title={Robot Dynamics with URDF \& CasADi},
