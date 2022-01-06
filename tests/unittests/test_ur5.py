@@ -29,7 +29,7 @@ def test_jointInfo(ur5):
 
 def test_dynamics(ur5):
     root = "base_link"
-    tip = "wrist_3_link"
+    tip = "wrist_2_link"
     M_sym = ur5.get_inertia_matrix_crba(root, tip)
     C_sym = ur5.get_coriolis_rnea(root, tip)
 
@@ -37,7 +37,7 @@ def test_dynamics(ur5):
     G_sym = ur5.get_gravity_rnea(root, tip, gravity)
 
     q = np.array([-3.0, 2.5, 0.21, -4.5, -1.0, 2.0])
-    q = [0, ] * 6
+    q = [0, ] * 5
     q_dot = [0.1, 1.2, -0.6, -1.3, 0.5, 0.6]
 
     print(q)
