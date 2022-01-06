@@ -29,7 +29,7 @@ def test_jointInfo(ur5):
 
 def test_dynamics(ur5):
     root = "base_link"
-    tip = "tool0"
+    tip = "shoulder_link"
     M_sym = ur5.get_inertia_matrix_crba(root, tip)
     C_sym = ur5.get_coriolis_rnea(root, tip)
 
