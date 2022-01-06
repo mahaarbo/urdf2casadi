@@ -2,7 +2,7 @@
 name = "urdf2casadi"
 version = "0.1.0"
 description = "Module for finding casadi functions of forward kinematics and dynamics of a URDF chain."
-authors = ["Mathias Hauan Arbo" <mathiasarbo@gmail.com>]
+authors = ["Mathias Hauan Arbo <mathiasarbo@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.6.0"
