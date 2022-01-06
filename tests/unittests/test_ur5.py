@@ -20,10 +20,6 @@ def test_jointInfo(ur5):
 
     joint_list, joint_names, q_max, q_min = ur5.get_joint_info(root, tip)
     n_joints = ur5.get_n_joints(root, tip)
-    print("name of first joint:", joint_names[0], "\n")
-    print("joint information for first joint:\n", joint_list[0])
-    print("\n q max:", q_max)
-    print("\n q min:", q_min)
     assert joint_names[0] == "shoulder_pan_joint"
     assert joint_list[0].child == "shoulder_link"
     assert joint_list[0].dynamics.friction == 0.0
@@ -45,8 +41,9 @@ def test_dynamics(ur5):
     q = [-3.0, 2.5, 0.21, -4.5, -1.0, 2.0]
     q_dot = [0.1, 1.2, -0.6, -1.3, 0.5, 0.6]
 
-    print(M_num)
-    M_num = np.array(M_sym(q))
+    M_num_ca = M_sym(q)
+    print(M_num_ca)
+    M_num = np.array(M_num_ca)
     C_num = np.array(C_sym(q, q_dot))
     G_num = np.array(G_sym(q))
 
