@@ -37,6 +37,7 @@ def test_dynamics(ur5):
     G_sym = ur5.get_gravity_rnea(root, tip, gravity)
 
     q = np.array([-3.0, 2.5, 0.21, -4.5, -1.0, 2.0])
+    q = [0, ] * 6
     q_dot = [0.1, 1.2, -0.6, -1.3, 0.5, 0.6]
 
     print(q)
