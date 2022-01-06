@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "urdf2casadi"
+version = "0.1.0"
+description = "Module for tuning a chain in a URDF to a casadi function."
+authors = ["Mathias Hauan Arbo"]
+
+[tool.poetry.dependencies]
+python = ">=3.6.0"
+casadi = "3.5.1"
+numpy = "^1.15.0"
+urdf_parser_py = ">=0.0.3"
+pytest = "^6.2.5"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

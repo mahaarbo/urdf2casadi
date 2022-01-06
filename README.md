@@ -15,6 +15,11 @@ Without ROS:
 2. [Get CasADi](https://github.com/casadi/casadi/wiki/InstallationInstructions) (e.g. `pip install casadi`).
 3.  Run `pip install --user .` in the folder (`--user` specifies that it is a local install).
 
+Install with poetry:
+1. `git clone urdf2casadi`
+2. Install poetry as described on the [website](https://python-poetry.org/docs/).
+3. Run `poetry install` in the directory.
+
 ## Usage example
 ```python
 import casadi as cs
