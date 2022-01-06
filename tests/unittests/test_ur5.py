@@ -7,9 +7,7 @@ import pytest
 @pytest.fixture
 def ur5():
     ur5 = u2c.URDFparser()
-    path_to_urdf = absPath = (
-        os.path.dirname(os.path.abspath(__file__)) + "/urdf/ur5_mod.urdf"
-    )
+    path_to_urdf = os.path.dirname(os.path.abspath(__file__)) + "/urdf/ur5_mod.urdf"
     ur5.from_file(path_to_urdf)
     return ur5
 
@@ -38,9 +36,10 @@ def test_dynamics(ur5):
     gravity = [0, 0, -9.81]
     G_sym = ur5.get_gravity_rnea(root, tip, gravity)
 
-    q = [-3.0, 2.5, 0.21, -4.5, -1.0, 2.0]
+    q = np.array([-3.0, 2.5, 0.21, -4.5, -1.0, 2.0])
     q_dot = [0.1, 1.2, -0.6, -1.3, 0.5, 0.6]
 
+    print(q)
     M_num_ca = M_sym(q)
     print(M_num_ca)
     M_num = np.array(M_num_ca)
