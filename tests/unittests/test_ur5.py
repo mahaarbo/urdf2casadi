@@ -41,10 +41,12 @@ def test_dynamics(ur5):
 
     print(q)
     M_num_ca = M_sym(q)
+    print(M_sym)
     print(M_num_ca)
     M_num = np.array(M_num_ca)
     C_num = np.array(C_sym(q, q_dot))
     G_num = np.array(G_sym(q))
+    assert 1 == 0
 
     assert M_num.shape == (6, 6)
     assert G_num.shape == (6, 1)

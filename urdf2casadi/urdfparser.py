@@ -389,6 +389,7 @@ class URDFparser(object):
                 M[i, j] = cs.mtimes(Si[j].T, fh)
                 M[j, i] = M[i, j]
 
+        print(M)
         M = cs.Function("M", [q], [M], self.func_opts)
         return M
 
