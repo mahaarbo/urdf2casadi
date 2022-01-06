@@ -45,6 +45,7 @@ def test_dynamics(ur5):
     q = [-3.0, 2.5, 0.21, -4.5, -1.0, 2.0]
     q_dot = [0.1, 1.2, -0.6, -1.3, 0.5, 0.6]
 
+    print(M_num)
     M_num = np.array(M_sym(q))
     C_num = np.array(C_sym(q, q_dot))
     G_num = np.array(G_sym(q))
