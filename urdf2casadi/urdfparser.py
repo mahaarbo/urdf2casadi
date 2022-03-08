@@ -14,11 +14,12 @@ import urdf2casadi.geometry.dual_quaternion as dual_quaternion
 class URDFparser(object):
     """Class that turns a chain from URDF to casadi functions."""
     actuated_types = ["prismatic", "revolute", "continuous"]
-    func_opts = {"jit": True, "jit_options": {"flags": "-Ofast"}}
+    func_opts = {}
+    jit_func_opts = {"jit": True, "jit_options": {"flags": "-Ofast"}}
     # OS/CPU dependent specification of compiler
     if system() == "darwin" or machine() == "aarch64":
-        func_opts["compiler"] = "shell"
-    
+        jit_func_opts["compiler"] = "shell"
+
     def __init__(self, func_opts=None):
         self.robot_desc = None
         if func_opts:
