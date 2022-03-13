@@ -106,7 +106,7 @@ def test_dynamics(ur5):
     )
     for i in range(6):
         for j in range(6):
-            assert M_num[i, j] == pytest.approx(float(M_rbdl[i, j]))
+            assert float(M_num[i, j]) == pytest.approx(M_rbdl[i, j])
     g_rbdl = np.array(
         [
             4.44089210e-16,
@@ -118,7 +118,7 @@ def test_dynamics(ur5):
         ]
     )
     for i in range(6):
-        assert G_num[i] == pytest.approx(float(g_rbdl[i]))
+        assert float(G_num[i]) == pytest.approx(g_rbdl[i])
     c_rbdl_all = np.array(
         [
             -4.81717356e-02,
@@ -131,7 +131,7 @@ def test_dynamics(ur5):
     )
     c_rbdl = c_rbdl_all - g_rbdl
     for i in range(6):
-        assert C_num[i] == pytest.approx(float(c_rbdl[i]))
+        assert float(C_num[i]) == pytest.approx(c_rbdl[i])
 
 
 def test_inverse_dynamics(ur5):
@@ -159,7 +159,7 @@ def test_inverse_dynamics(ur5):
         ]
     )
     for i in range(6):
-        assert tau_g_num[i] == pytest.approx(float(tau_rbdl[i]))
+        assert float(tau_g_num[i]) == pytest.approx(tau_rbdl[i])
 
 
 def test_forward_dynamics(ur5):
@@ -179,4 +179,4 @@ def test_forward_dynamics(ur5):
         [1.52072684, -17.46341328, 10.95245985, 11.85747633, 0.23032233, -7.33331383]
     )
     for i in range(6):
-        assert qddot_g_num[i] == pytest.approx(float(qddot_rbdl[i]))
+        assert float(qddot_g_num[i]) == pytest.approx(qddot_rbdl[i])
