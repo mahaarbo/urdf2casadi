@@ -7,14 +7,14 @@ import pytest
 @pytest.fixture
 def ur5():
     ur5 = u2c.URDFparser()
-    path_to_urdf = absPath = (
+    path_to_urdf = (
         os.path.dirname(os.path.abspath(__file__)) + "/urdf/ur5_mod.urdf"
     )
     ur5.from_file(path_to_urdf)
     return ur5
 
 
-def test_jointInfo(ur5):
+def test_joint_info(ur5):
     root = "base_link"
     tip = "tool0"
 
@@ -45,13 +45,13 @@ def test_dynamics(ur5):
     q = [-3.0, 2.5, 0.21, -4.5, -1.0, 2.0]
     q_dot = [0.1, 1.2, -0.6, -1.3, 0.5, 0.6]
 
-    M_num = np.array(M_sym(q))
-    C_num = np.array(C_sym(q, q_dot))
-    G_num = np.array(G_sym(q))
+    M_num = M_sym(q)
+    C_num = C_sym(q, q_dot)
+    G_num = G_sym(q)
 
-    assert M_num.shape == (6, 6)
-    assert G_num.shape == (6, 1)
-    assert C_num.shape == (6, 1)
+    assert M_num.size() == (6, 6)
+    assert G_num.size() == (6, 1)
+    assert C_num.size() == (6, 1)
     M_rbdl = np.array(
         [
             [
@@ -106,7 +106,7 @@ def test_dynamics(ur5):
     )
     for i in range(6):
         for j in range(6):
-            assert M_num[i, j] == pytest.approx(M_rbdl[i, j])
+            assert M_num[i, j] == pytest.approx(float(M_rbdl[i, j]))
     g_rbdl = np.array(
         [
             4.44089210e-16,
@@ -118,7 +118,7 @@ def test_dynamics(ur5):
         ]
     )
     for i in range(6):
-        assert G_num[i] == pytest.approx(g_rbdl[i])
+        assert G_num[i] == pytest.approx(float(g_rbdl[i]))
     c_rbdl_all = np.array(
         [
             -4.81717356e-02,
@@ -131,10 +131,10 @@ def test_dynamics(ur5):
     )
     c_rbdl = c_rbdl_all - g_rbdl
     for i in range(6):
-        assert C_num[i] == pytest.approx(c_rbdl[i])
+        assert C_num[i] == pytest.approx(float(c_rbdl[i]))
 
 
-def test_inversDynamics(ur5):
+def test_inverse_dynamics(ur5):
     root = "base_link"
     tip = "tool0"
 
@@ -146,7 +146,7 @@ def test_inversDynamics(ur5):
     q_dot = [0.1, 1.2, -0.6, -1.3, 0.5, 0.6]
     q_ddot = np.array([0.5, -0.3, 0.2, 0.1, 0.6, 0.6])
 
-    tau_g_num = np.array(tau_g_sym(q, q_dot, q_ddot))
+    tau_g_num = tau_g_sym(q, q_dot, q_ddot)
 
     tau_rbdl = np.array(
         [
@@ -159,10 +159,10 @@ def test_inversDynamics(ur5):
         ]
     )
     for i in range(6):
-        assert tau_g_num[i] == pytest.approx(tau_rbdl[i])
+        assert tau_g_num[i] == pytest.approx(float(tau_rbdl[i]))
 
 
-def test_forwardDynamics(ur5):
+def test_forward_dynamics(ur5):
     root = "base_link"
     tip = "tool0"
 
@@ -174,9 +174,9 @@ def test_forwardDynamics(ur5):
     q_dot = [0.1, 1.2, -0.6, -1.3, 0.5, 0.6]
     tau = np.array([0.4, -0.2, 0.1, 1.2, 0.2, -0.3])
 
-    qddot_g_num = np.array(qddot_g_sym(q, q_dot, tau))
+    qddot_g_num = qddot_g_sym(q, q_dot, tau)
     qddot_rbdl = np.array(
         [1.52072684, -17.46341328, 10.95245985, 11.85747633, 0.23032233, -7.33331383]
     )
     for i in range(6):
-        assert qddot_g_num[i] == pytest.approx(qddot_rbdl[i])
+        assert qddot_g_num[i] == pytest.approx(float(qddot_rbdl[i]))

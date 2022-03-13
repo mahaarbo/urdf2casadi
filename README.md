@@ -56,5 +56,5 @@ The results were published in "Robot Dynamics with URDF & CasADi" at ICCMA 2019.
 - [x] Dual Quaternions as alternative to SE(3) matrices
 - [x] Dynamics from links and their inertia tags
 - [ ] Denavit Hartenberg?
-- [ ] Move numerical to a test folder
+- [x] Move numerical to a test folder
 - [x] Examples
