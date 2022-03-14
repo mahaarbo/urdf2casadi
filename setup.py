@@ -14,7 +14,7 @@ URL = "http://github.com/mahaarbo/urdf2casadi"
 EMAIL = "mathias.arbo@ntnu.no"
 AUTHOR = "Mathias Hauan Arbo"
 REQUIRES_PYTHON = ">=2.7.0"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 REQUIRED = [
     "casadi", "numpy", "urdf_parser_py"

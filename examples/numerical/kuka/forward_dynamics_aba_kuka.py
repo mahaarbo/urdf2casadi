@@ -1,5 +1,6 @@
 import numpy as np
 import casadi as cs
+import os
 from urdf_parser_py.urdf import URDF, Pose
 import urdf2casadi.urdfparser as u2c
 
@@ -7,7 +8,8 @@ root = "calib_kuka_arm_base_link"
 tip = "kuka_arm_7_link"
 
 kuka = u2c.URDFparser()
-kuka.from_file("../../urdf/kuka.urdf")
+path_to_urdf = os.path.dirname(os.path.realpath(__file__)) + "/../../urdf/kuka.urdf"
+kuka.from_file(path_to_urdf)
 
 jointlist, names, q_max, q_min = kuka.get_joint_info(root, tip)
 n_joints = kuka.get_n_joints(root, tip)
