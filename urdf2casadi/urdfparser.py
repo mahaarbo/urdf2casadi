@@ -20,10 +20,14 @@ class URDFparser(object):
     if system() == "darwin" or machine() == "aarch64":
         jit_func_opts["compiler"] = "shell"
 
-    def __init__(self, func_opts=None):
+    def __init__(self, func_opts=None, use_jit=True):
         self.robot_desc = None
         if func_opts:
             self.func_opts = func_opts
+        if use_jit:
+            # NOTE: use_jit=True requires that CasADi is built with Clang
+            for k, v in self.jit_func_opts.items():
+                self.func_opts[k] = v
 
     def from_file(self, filename):
         """Uses an URDF file to get robot description."""
