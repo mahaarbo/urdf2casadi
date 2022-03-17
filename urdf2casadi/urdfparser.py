@@ -14,15 +14,20 @@ import urdf2casadi.geometry.dual_quaternion as dual_quaternion
 class URDFparser(object):
     """Class that turns a chain from URDF to casadi functions."""
     actuated_types = ["prismatic", "revolute", "continuous"]
-    func_opts = {"jit": True, "jit_options": {"flags": "-Ofast"}}
+    func_opts = {}
+    jit_func_opts = {"jit": True, "jit_options": {"flags": "-Ofast"}}
     # OS/CPU dependent specification of compiler
     if system() == "darwin" or machine() == "aarch64":
-        func_opts["compiler"] = "shell"
-    
-    def __init__(self, func_opts=None):
+        jit_func_opts["compiler"] = "shell"
+
+    def __init__(self, func_opts=None, use_jit=True):
         self.robot_desc = None
         if func_opts:
             self.func_opts = func_opts
+        if use_jit:
+            # NOTE: use_jit=True requires that CasADi is built with Clang
+            for k, v in self.jit_func_opts.items():
+                self.func_opts[k] = v
 
     def from_file(self, filename):
         """Uses an URDF file to get robot description."""
