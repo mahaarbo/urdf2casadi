@@ -4,6 +4,7 @@ version = "0.2.0"
 description = "Module for tuning a chain in a URDF to a casadi function."
 authors = ["Mathias Hauan Arbo"]
 readme = "README.md"
+license = "MIT"
 repository = "https://github.com/mahaarbo/urdf2casadi"
 
 [tool.poetry.dependencies]

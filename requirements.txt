@@ -1,4 +1,0 @@
-numpy==1.11.0
-casadi==3.5.5
-urdfdom-py
-urdf_parser_py==0.0.3
