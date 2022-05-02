@@ -584,8 +584,13 @@ class URDFparser(object):
         i = 0
         for joint in joint_list:
             if joint.type == "fixed":
-                xyz = joint.origin.xyz
-                rpy = joint.origin.rpy
+                if joint.origin is not None:
+                    xyz = joint.origin.xyz
+                    rpy = joint.origin.rpy
+                else:
+                    # origin tag not given -> assume zero
+                    xyz = [0.0]*3
+                    rpy = [0.0]*3
                 joint_frame = T.numpy_rpy(xyz, *rpy)
                 joint_quaternion = quaternion.numpy_rpy(*rpy)
                 joint_dual_quat = dual_quaternion.numpy_prismatic(
