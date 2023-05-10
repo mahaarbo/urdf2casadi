@@ -15,6 +15,7 @@ dist/
 downloads/
 eggs/
 .eggs/
+.DS_Store
 lib/
 lib64/
 parts/
