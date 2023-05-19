@@ -466,6 +466,7 @@ class URDFparser(object):
             tau[i] = cs.mtimes(Si[i].T, f[i])
             if i != 0:
                 f[i-1] = f[i-1] + cs.mtimes(i_X_p[i].T, f[i])
+
         C = cs.Function("C", [q, q_dot], [tau], self.func_opts)
         return C
 
@@ -488,12 +489,10 @@ class URDFparser(object):
         M_inv = cs.solve(M, cs.SX.eye(M.size1()))
 
         C = self._get_C(i_X_p, Si, Ic, q, q_dot, n_joints, gravity, f_ext)
-        q_ddot = cs.mtimes(M_inv, (tau - C))
 
-        func_opts = self.func_opts
-        func_opts["allow_free"] = True
+        q_ddot = cs.mtimes(M_inv, (tau - C))
         q_ddot = cs.Function("q_ddot", [q, q_dot, tau],
-                             [q_ddot], func_opts)
+                             [q_ddot], self.func_opts)
 
         return q_ddot
 
@@ -563,10 +562,8 @@ class URDFparser(object):
             q_ddot[i] = (u[i] - cs.mtimes(U[i].T, a_temp))/d[i]
             a.append(a_temp + cs.mtimes(Si[i], q_ddot[i]))
 
-        func_opts = self.func_opts
-        func_opts["allow_free"] = True
         q_ddot = cs.Function("q_ddot", [q, q_dot, tau],
-                             [q_ddot], func_opts)
+                             [q_ddot], self.func_opts)
         return q_ddot
 
     def get_forward_kinematics(self, root, tip):
