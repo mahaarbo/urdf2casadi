@@ -225,7 +225,7 @@ class URDFparser(object):
                     spatial_inertia = np.zeros((6, 6))
                 else:
                     I = link.inertial.inertia
-                    spatial_inertia = plucker.spatial_inertia_matrix_IO(
+                    spatial_inertia = plucker.spatial_inertia_matrix_IO_sym(
                         I.ixx,
                         I.ixy,
                         I.ixz,
