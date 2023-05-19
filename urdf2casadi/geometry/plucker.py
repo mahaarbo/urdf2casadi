@@ -65,6 +65,24 @@ def spatial_inertia_matrix_Ic(ixx, ixy, ixz, iyy, iyz, izz, mass):
 
     return Ic
 
+def spatial_inertia_matrix_Ic_sym(ixx, ixy, ixz, iyy, iyz, izz, mass):
+    """Returns the 6x6 spatial inertia matrix expressed at the center of
+    mass in symbolic representation"""
+    Ic_sym = cs.SX.zeros(6, 6)
+    Ic_sym[0, 0] = ixx
+    Ic_sym[1, 0] = ixy
+    Ic_sym[2, 0] = ixz
+    Ic_sym[0, 1] = ixy
+    Ic_sym[0, 2] = ixz
+    Ic_sym[1, 1] = iyy
+    Ic_sym[2, 1] = iyz
+    Ic_sym[1, 2] = iyz
+    Ic_sym[2, 2] = izz
+    Ic_sym[3, 3] = mass
+    Ic_sym[4, 4] = mass
+    Ic_sym[5, 5] = mass
+
+    return Ic_sym
 
 def spatial_inertia_matrix_IO(ixx, ixy, ixz, iyy, iyz, izz, mass, c):
     """Returns the 6x6 spatial inertia matrix expressed at the origin."""
@@ -83,6 +101,27 @@ def spatial_inertia_matrix_IO(ixx, ixy, ixz, iyy, iyz, izz, mass, c):
     IO[5, 5] = mass
 
     return IO
+
+def spatial_inertia_matrix_IO_sym(ixx, ixy, ixz, iyy, iyz, izz, mass, c):
+    """Returns the 6x6 spatial inertia matrix expressed at the origin in symbolic representation"""
+    cx = numpy_skew_symmetric(c)
+    I0_rel = mass*(np.dot(cx, np.transpose(cx)))
+    IO_sym = cs.SX.zeros(6, 6)
+    IO_sym[0, 0] = ixx + I0_rel[0, 0]
+    IO_sym[1, 0] = ixy + I0_rel[1, 0]
+    IO_sym[2, 0] = ixz + I0_rel[2, 0]
+    IO_sym[0, 1] = ixy + I0_rel[0, 1]
+    IO_sym[1, 1] = iyy + I0_rel[1, 1]
+    IO_sym[2, 1] = iyz + I0_rel[2, 1]
+    IO_sym[0, 2] = ixz + I0_rel[0, 2]
+    IO_sym[1, 2] = iyz + I0_rel[1, 2]
+    IO_sym[2, 2] = izz + I0_rel[2, 2]
+
+    IO_sym[3, 3] = mass
+    IO_sym[4, 4] = mass
+    IO_sym[5, 5] = mass
+
+    return IO_sym
 
 
 def numpy_rotation_rpy(roll, pitch, yaw):
