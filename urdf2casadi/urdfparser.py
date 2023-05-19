@@ -469,6 +469,34 @@ class URDFparser(object):
 
         C = cs.Function("C", [q, q_dot], [tau], self.func_opts)
         return C
+    
+    def _link_paramters_symbolic_gen(self, root, tip):
+        """Internal function for generating a symbolic representation of link parameters."""
+        n_joints = self.get_n_joints(root, tip)
+        is_inertia_link = lambda link: link[1].inertial is not None
+        inertia_links = list(map(lambda link: link[1], filter(is_inertia_link , self.robot_desc.link_map.items())))
+        
+        ixx = cs.SX.sym("ixx", n_joints)
+        ixy = cs.SX.sym("ixy", n_joints)
+        ixz = cs.SX.sym("ixz", n_joints)
+        iyy = cs.SX.sym("iyy", n_joints)
+        iyz = cs.SX.sym("iyz", n_joints)
+        izz = cs.SX.sym("izz", n_joints)
+
+        i_mat = cs.horzcat(ixx, ixy, ixz, iyy, iyz, izz)
+        i_vec = cs.vertcat(ixx, ixy, ixz, iyy, iyz, izz)
+
+        params = [i_mat[0,:], i_mat[1,:], i_mat[2,:], i_mat[3,:]]
+
+        for index, k in enumerate(params):
+            # assuming link 0 is base
+            # start at link 1.
+            inertia_links[index+1].inertial.inertia.ixx = k[0]
+            inertia_links[index+1].inertial.inertia.ixy = k[1]
+            inertia_links[index+1].inertial.inertia.ixz = k[2]
+            inertia_links[index+1].inertial.inertia.iyy = k[3]
+            inertia_links[index+1].inertial.inertia.iyz = k[4]
+            inertia_links[index+1].inertial.inertia.izz = k[5]
 
     def get_forward_dynamics_crba(self, root, tip, gravity=None, f_ext=None):
         """Returns the forward dynamics as a casadi function by
