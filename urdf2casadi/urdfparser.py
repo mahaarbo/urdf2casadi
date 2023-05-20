@@ -513,7 +513,7 @@ class URDFparser(object):
         """
         if self.robot_desc_backup is None:
             raise ValueError('Robot description not loaded from urdf')
-        self.robot_desc = self.robot_desc_backup
+        self.robot_desc = copy.deepcopy(self.robot_desc_backup)
         n_joints = self.get_n_joints(root, tip)
         q = cs.SX.sym("q", n_joints)
         q_dot = cs.SX.sym("q_dot", n_joints)
@@ -545,7 +545,7 @@ class URDFparser(object):
 
         if self.robot_desc_backup is None:
             raise ValueError('Robot description not loaded from urdf')
-        self.robot_desc = self.robot_desc_backup
+        self.robot_desc = copy.deepcopy(self.robot_desc_backup)
         n_joints = self.get_n_joints(root, tip)
         q = cs.SX.sym("q", n_joints)
         q_dot = cs.SX.sym("q_dot", n_joints)
