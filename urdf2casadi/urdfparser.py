@@ -22,6 +22,7 @@ class URDFparser(object):
 
     def __init__(self, func_opts=None, use_jit=True):
         self.robot_desc = None
+        self.robot_desc_backup = None
         if func_opts:
             self.func_opts = func_opts
         if use_jit:
@@ -32,14 +33,17 @@ class URDFparser(object):
     def from_file(self, filename):
         """Uses an URDF file to get robot description."""
         self.robot_desc = URDF.from_xml_file(filename)
+        self.robot_desc_backup = self.robot_desc
 
     def from_server(self, key="robot_description"):
         """Uses a parameter server to get robot description."""
         self.robot_desc = URDF.from_parameter_server(key=key)
+        self.robot_desc_backup = self.robot_desc
 
     def from_string(self, urdfstring):
         """Uses a URDF string to get robot description."""
         self.robot_desc = URDF.from_xml_string(urdfstring)
+        self.robot_desc_backup = self.robot_desc
 
     def get_joint_info(self, root, tip):
         """Using an URDF to extract joint information, i.e list of
@@ -507,8 +511,9 @@ class URDFparser(object):
         for robots with a high number of dof -> use
         get_forward_dynamics_aba().
         """
-        if self.robot_desc is None:
+        if self.robot_desc_backup is None:
             raise ValueError('Robot description not loaded from urdf')
+        self.robot_desc = self.robot_desc_backup
         n_joints = self.get_n_joints(root, tip)
         q = cs.SX.sym("q", n_joints)
         q_dot = cs.SX.sym("q_dot", n_joints)
@@ -516,7 +521,6 @@ class URDFparser(object):
         q_ddot = cs.SX.zeros(n_joints)
 
         syms = [q, q_dot, tau]
-
         if symbolic_inertia:
             I_vec = self._update_link_paramters_2_sym()
             syms.append(I_vec)
@@ -539,9 +543,9 @@ class URDFparser(object):
         """Returns the forward dynamics as a casadi function using the
         articulated body algorithm."""
 
-        if self.robot_desc is None:
+        if self.robot_desc_backup is None:
             raise ValueError('Robot description not loaded from urdf')
-
+        self.robot_desc = self.robot_desc_backup
         n_joints = self.get_n_joints(root, tip)
         q = cs.SX.sym("q", n_joints)
         q_dot = cs.SX.sym("q_dot", n_joints)
