@@ -9,7 +9,7 @@ import urdf2casadi.geometry.transformation_matrix as T
 import urdf2casadi.geometry.plucker as plucker
 import urdf2casadi.geometry.quaternion as quaternion
 import urdf2casadi.geometry.dual_quaternion as dual_quaternion
-
+import copy
 
 class URDFparser(object):
     """Class that turns a chain from URDF to casadi functions."""
@@ -33,17 +33,17 @@ class URDFparser(object):
     def from_file(self, filename):
         """Uses an URDF file to get robot description."""
         self.robot_desc = URDF.from_xml_file(filename)
-        self.robot_desc_backup = self.robot_desc
+        self.robot_desc_backup = copy.deepcopy(self.robot_desc)
 
     def from_server(self, key="robot_description"):
         """Uses a parameter server to get robot description."""
         self.robot_desc = URDF.from_parameter_server(key=key)
-        self.robot_desc_backup = self.robot_desc
+        self.robot_desc_backup = copy.deepcopy(self.robot_desc)
 
     def from_string(self, urdfstring):
         """Uses a URDF string to get robot description."""
         self.robot_desc = URDF.from_xml_string(urdfstring)
-        self.robot_desc_backup = self.robot_desc
+        self.robot_desc_backup = copy.deepcopy(self.robot_desc)
 
     def get_joint_info(self, root, tip):
         """Using an URDF to extract joint information, i.e list of
