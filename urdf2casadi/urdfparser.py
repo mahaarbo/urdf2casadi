@@ -470,35 +470,35 @@ class URDFparser(object):
         C = cs.Function("C", [q, q_dot], [tau], self.func_opts)
         return C
     
-    def _link_paramters_symbolic_gen(self, root, tip):
+    def _update_link_paramters_2_sym(self):
         """Internal function for generating a symbolic representation of link parameters."""
-        n_joints = self.get_n_joints(root, tip)
         is_inertia_link = lambda link: link[1].inertial is not None
-        inertia_links = list(map(lambda link: link[1], filter(is_inertia_link , self.robot_desc.link_map.items())))
-        
-        ixx = cs.SX.sym("ixx", n_joints)
-        ixy = cs.SX.sym("ixy", n_joints)
-        ixz = cs.SX.sym("ixz", n_joints)
-        iyy = cs.SX.sym("iyy", n_joints)
-        iyz = cs.SX.sym("iyz", n_joints)
-        izz = cs.SX.sym("izz", n_joints)
+        links = list(map(lambda l:l[1],filter(is_inertia_link ,self.robot_desc.link_map.items())))
+        n_links = len(links)
 
-        i_mat = cs.horzcat(ixx, ixy, ixz, iyy, iyz, izz)
-        i_vec = cs.vertcat(ixx, ixy, ixz, iyy, iyz, izz)
+        ixx = cs.SX.sym("ixx", n_links)
+        ixy = cs.SX.sym("ixy", n_links)
+        ixz = cs.SX.sym("ixz", n_links)
+        iyy = cs.SX.sym("iyy", n_links)
+        iyz = cs.SX.sym("iyz", n_links)
+        izz = cs.SX.sym("izz", n_links)
 
-        params = [i_mat[0,:], i_mat[1,:], i_mat[2,:], i_mat[3,:]]
+        I_mat = cs.horzcat(ixx, ixy, ixz, iyy, iyz, izz)
+        params = [I_mat[0,:], I_mat[1,:], I_mat[2,:], I_mat[3,:], I_mat[4,:]]
 
-        for index, k in enumerate(params):
-            # assuming link 0 is base
-            # start at link 1.
-            inertia_links[index+1].inertial.inertia.ixx = k[0]
-            inertia_links[index+1].inertial.inertia.ixy = k[1]
-            inertia_links[index+1].inertial.inertia.ixz = k[2]
-            inertia_links[index+1].inertial.inertia.iyy = k[3]
-            inertia_links[index+1].inertial.inertia.iyz = k[4]
-            inertia_links[index+1].inertial.inertia.izz = k[5]
+        for j, i in enumerate(params):
+            # start at link 1. i
+            links[j].inertial.inertia.ixx = i[0]
+            links[j].inertial.inertia.ixy = i[1]
+            links[j].inertial.inertia.ixz = i[2]
+            links[j].inertial.inertia.iyy = i[3]
+            links[j].inertial.inertia.iyz = i[4]
+            links[j].inertial.inertia.izz = i[5]
 
-    def get_forward_dynamics_crba(self, root, tip, gravity=None, f_ext=None):
+        I_vec = cs.vertcat(ixx, ixy, ixz, iyy, iyz, izz)
+        return I_vec
+
+    def get_forward_dynamics_crba(self, root, tip, gravity=None, f_ext=None, symbolic_inertia=False):
         """Returns the forward dynamics as a casadi function by
         solving the Lagrangian eq. of motion.  OBS! Not appropriate
         for robots with a high number of dof -> use
@@ -511,6 +511,13 @@ class URDFparser(object):
         q_dot = cs.SX.sym("q_dot", n_joints)
         tau = cs.SX.sym("tau", n_joints)
         q_ddot = cs.SX.zeros(n_joints)
+
+        syms = [q, q_dot, tau]
+
+        if symbolic_inertia:
+            I_vec = self._update_link_paramters_2_sym()
+            syms.append(I_vec)
+
         i_X_p, Si, Ic = self._model_calculation(root, tip, q)
 
         M = self._get_M(Ic, i_X_p, Si, n_joints, q)
@@ -519,12 +526,13 @@ class URDFparser(object):
         C = self._get_C(i_X_p, Si, Ic, q, q_dot, n_joints, gravity, f_ext)
 
         q_ddot = cs.mtimes(M_inv, (tau - C))
-        q_ddot = cs.Function("q_ddot", [q, q_dot, tau],
-                             [q_ddot], self.func_opts)
 
-        return q_ddot
+        q_ddot_func = cs.Function("q_ddot", syms,
+                                [q_ddot], self.func_opts)
 
-    def get_forward_dynamics_aba(self, root, tip, gravity=None, f_ext=None):
+        return q_ddot_func
+
+    def get_forward_dynamics_aba(self, root, tip, gravity=None, f_ext=None, symbolic_inertia=False):
         """Returns the forward dynamics as a casadi function using the
         articulated body algorithm."""
 
@@ -536,6 +544,13 @@ class URDFparser(object):
         q_dot = cs.SX.sym("q_dot", n_joints)
         tau = cs.SX.sym("tau", n_joints)
         q_ddot = cs.SX.zeros(n_joints)
+
+        syms = [q, q_dot, tau]
+
+        if symbolic_inertia:
+            I_vec = self._update_link_paramters_2_sym()
+            syms.append(I_vec)
+
         i_X_p, Si, Ic = self._model_calculation(root, tip, q)
 
         v = []
@@ -590,9 +605,10 @@ class URDFparser(object):
             q_ddot[i] = (u[i] - cs.mtimes(U[i].T, a_temp))/d[i]
             a.append(a_temp + cs.mtimes(Si[i], q_ddot[i]))
 
-        q_ddot = cs.Function("q_ddot", [q, q_dot, tau],
-                             [q_ddot], self.func_opts)
-        return q_ddot
+        q_ddot_func = cs.Function("q_ddot", syms,
+                                [q_ddot], self.func_opts)
+
+        return q_ddot_func
 
     def get_forward_kinematics(self, root, tip):
         """Returns the forward kinematics as a casadi function."""
