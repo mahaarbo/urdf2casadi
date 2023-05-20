@@ -422,7 +422,7 @@ class URDFparser(object):
             f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))
 
         if f_ext is not None:
-            f = self._apply_external_forces(f_ext, f, i_X_0)
+            f = self._apply_external_forces(f_ext, f, i_X_p)
 
         for i in range(n_joints-1, -1, -1):
             C[i] = cs.mtimes(Si[i].T, f[i])
@@ -460,7 +460,7 @@ class URDFparser(object):
             f.append(cs.mtimes(Ic[i], a[i]) + cs.mtimes(plucker.force_cross_product(v[i]), cs.mtimes(Ic[i], v[i])))
 
         if f_ext is not None:
-            f = self._apply_external_forces(f_ext, f, i_X_0)
+            f = self._apply_external_forces(f_ext, f, i_X_p)
 
         for i in range(n_joints-1, -1, -1):
             tau[i] = cs.mtimes(Si[i].T, f[i])
@@ -487,7 +487,6 @@ class URDFparser(object):
         params = [I_mat[0,:], I_mat[1,:], I_mat[2,:], I_mat[3,:], I_mat[4,:]]
 
         for j, i in enumerate(params):
-            # start at link 1. i
             links[j].inertial.inertia.ixx = i[0]
             links[j].inertial.inertia.ixy = i[1]
             links[j].inertial.inertia.ixz = i[2]
@@ -495,7 +494,11 @@ class URDFparser(object):
             links[j].inertial.inertia.iyz = i[4]
             links[j].inertial.inertia.izz = i[5]
 
-        I_vec = cs.vertcat(ixx, ixy, ixz, iyy, iyz, izz)
+        I_vec = cs.vertcat(I_mat[0,:].T,
+                           I_mat[1,:].T,
+                           I_mat[2,:].T,
+                           I_mat[3,:].T,
+                           I_mat[4,:].T)
         return I_vec
 
     def get_forward_dynamics_crba(self, root, tip, gravity=None, f_ext=None, symbolic_inertia=False):
