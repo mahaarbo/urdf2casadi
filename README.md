@@ -59,3 +59,4 @@ The results were published in "Robot Dynamics with URDF & CasADi" at ICCMA 2019.
 - [x] Move numerical to a test folder
 - [x] Examples
 - [x] Symbolic link inertia represented dynamics
+- [ ] Sensitivity Analysis
