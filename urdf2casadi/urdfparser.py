@@ -17,7 +17,7 @@ class URDFparser(object):
     func_opts = {}
     jit_func_opts = {"jit": True, "jit_options": {"flags": "-Ofast"}}
     # OS/CPU dependent specification of compiler
-    if system() == "darwin" or machine() == "aarch64":
+    if system().lower() == "darwin" or machine().lower() == "aarch64":
         jit_func_opts["compiler"] = "shell"
 
     def __init__(self, func_opts=None, use_jit=True):

@@ -9,7 +9,7 @@ repository = "https://github.com/mahaarbo/urdf2casadi"
 
 [tool.poetry.dependencies]
 python = ">=3.6.0"
-casadi = "3.5.5"
+casadi = ">=3.5.5"
 numpy = "^1.15.0"
 urdf_parser_py = ">=0.0.3"
 pytest = "^6.2.5"
