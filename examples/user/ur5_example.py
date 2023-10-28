@@ -56,6 +56,7 @@ print("\n q min:", q_min)
 
 M_sym = ur5.get_inertia_matrix_crba(root, tip)
 C_sym = ur5.get_coriolis_rnea(root, tip)
+J_sym = ur5.get_jacobian(root, tip)
 
 gravity = [0, 0, -9.81]
 G_sym = ur5.get_gravity_rnea(root, tip, gravity)
@@ -76,9 +77,11 @@ for i in range(n_joints):
 M_num = M_sym(q)
 C_num = C_sym(q, q_dot)
 G_num = G_sym(q)
+J_num = J_sym(q)
 print("Numerical Inertia Matrx for random input: \n", M_num)
 print("\nNumerical Coriolis term for random input: \n", C_num) 
 print("\nNumerical gravity term for random input: \n", G_num)
+print("\nNumerical Jacobian for random input: \n", J_num)
 
 
 # ## Inverse Dynamics 

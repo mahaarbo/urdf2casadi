@@ -670,3 +670,32 @@ class URDFparser(object):
             "dual_quaternion_fk": dual_quaternion_fk,
             "T_fk": T_fk
         }
+    
+    def get_jacobian(self, root, tip):
+        """Returns the geometric jacobian as a casadi function using the
+        derivative method."""
+
+        if self.robot_desc is None:
+            raise ValueError('Robot description not loaded from urdf')
+
+        n_joints = self.get_n_joints(root, tip)
+        q = cs.SX.sym("q", n_joints)
+        
+        end_effector_fun = self.get_forward_kinematics(root, tip)
+        T_fk_exp = end_effector_fun["T_fk"](q)
+        R = T_fk_exp[0:3,0:3]
+        # Euler: Rz(phi)Ry(theta)Rx(psi)
+        theta = -cs.asin(R[2,0])
+        psi   = cs.atan2(R[2,1], R[2,2])
+        phi   = cs.atan2(R[1,0], R[0,0])
+        euler = cs.hcat((phi, theta, psi))
+        Jeuler_exp = cs.jacobian(euler, q)          # Analytical Jacobian
+        B = cs.vcat((cs.hcat((0, -cs.sin(phi), cs.cos(phi)*cs.cos(theta))),
+                     cs.hcat((0,  cs.cos(phi), cs.cos(theta)*cs.sin(phi))),
+                     cs.hcat((1,            0,           -cs.sin(theta)))))
+        Jw_exp = B @ Jeuler_exp                     # Geometric Jacobian
+        Jv_exp = cs.jacobian(T_fk_exp[0:3,3], q)
+        J_exp = cs.vertcat(Jw_exp, Jv_exp)
+
+        return cs.Function("jacobian", [q], [J_exp], self.func_opts)
+
